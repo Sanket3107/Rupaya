@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from pydantic import Field
+from datetime import timedelta
 
 class Settings(BaseSettings):
     # === Environment-based values ===
@@ -11,6 +12,8 @@ class Settings(BaseSettings):
     api_base_path: str = "/api/v1"
     access_token_expire_minutes: int = 60 * 24  # 1 day
     JWT_ALGORITHM: str = "HS256"
+    ACCESS_TOKEN_EXPIRE: timedelta = timedelta(minutes=30)
+    REFRESH_TOKEN_EXPIRE: timedelta = timedelta(days=7)
 
     class Config:
         env_file = ".env"
