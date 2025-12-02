@@ -1,11 +1,12 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Depends
 from jose import jwt, JWTError
 from datetime import datetime, timezone
 from app.db import prisma
 from app.core.security import (
     hash_password,
     verify_password,
-    create_access_token
+    create_access_token,
+    oauth2_scheme
 )
 from app.core.redis import redis_client
 from app.core.config import settings
@@ -122,7 +123,7 @@ async def change_user_password(token: str, old_password: str, new_password: str)
     return {"detail": "Password changed successfully"}
 
 
-async def get_current_user(token: str):
+async def get_current_user(token: str = Depends(oauth2_scheme)):
     if await redis_client.exists(f"blacklist:{token}"):
         raise HTTPException(status_code=401, detail="Token invalidated. Please log in again.")
 

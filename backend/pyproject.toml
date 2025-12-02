@@ -7,6 +7,7 @@ requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.120.4",
     "jose>=1.0.0",
+    "bcrypt==4.0.1",
     "passlib[bcrypt]>=1.7.4",
     "prisma>=0.15.0",
     "psycopg2-binary>=2.9.11",
@@ -14,4 +15,5 @@ dependencies = [
     "python-jose>=3.5.0",
     "redis>=7.0.1",
     "supabase>=2.23.0",
+    "pydantic-settings>=2.0.0",
 ]

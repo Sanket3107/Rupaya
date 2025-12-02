@@ -12,6 +12,7 @@ from app.services.auth_service import (
     change_user_password,
     get_current_user
 )
+from app.core.security import oauth2_scheme
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -24,11 +25,11 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     return await login_user(form_data.username, form_data.password)
 
 @router.post("/logout")
-async def logout(token: str):  # Direct token parameter
+async def logout(token: str = Depends(oauth2_scheme)):
     return await logout_user(token)
 
 @router.post("/logout-all")
-async def logout_all(token: str):  # Direct token parameter
+async def logout_all(token: str = Depends(oauth2_scheme)):
     return await logout_all_sessions(token)
 
 @router.post("/refresh")
@@ -38,10 +39,10 @@ async def refresh(data: RefreshTokenRequest):
 @router.post("/change-password")
 async def change_password(
     data: PasswordChangeRequest,
-    token: str  # Direct token parameter
+    token: str = Depends(oauth2_scheme)
 ):
     return await change_user_password(token, data.old_password, data.new_password)
 
 @router.get("/me", response_model=UserOut)
-async def get_me(token: str):  # Direct token parameter
-    return await get_current_user(token)
+async def get_me(current_user: UserOut = Depends(get_current_user)):
+    return current_user
