@@ -1,30 +1,30 @@
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status, Depends
 from jose import jwt, JWTError
-from datetime import datetime, timezone
 from app.db import prisma
 from app.core.security import (
-    hash_password,
     verify_password,
-    create_access_token,
+    encode_token,
     oauth2_scheme
 )
 from app.core.redis import redis_client
 from app.core.config import settings
 
 
-async def register_user(name: str, email: str, password: str):
-    if len(password) < 8:
-        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+def create_token(data: dict, expires_delta: timedelta | None = None, token_type: str = "access"):
+    """Create a JWT access or refresh token with business logic for expiry."""
+    to_encode = data.copy()
+    to_encode["type"] = token_type
     
-    existing = await prisma.user.find_unique(where={"email": email})
-    if existing:
-        raise HTTPException(status_code=400, detail="Email already registered")
-
-    hashed_pw = hash_password(password)
-    user = await prisma.user.create(
-        data={"name": name, "email": email, "password": hashed_pw}
-    )
-    return user
+    if expires_delta is None:
+        if token_type == "refresh":
+            expires_delta = getattr(settings, "REFRESH_TOKEN_EXPIRE", timedelta(days=7))
+        else:
+            expires_delta = getattr(settings, "ACCESS_TOKEN_EXPIRE", timedelta(minutes=30))
+    
+    expire = datetime.now(timezone.utc) + expires_delta
+    to_encode.update({"exp": expire})
+    return encode_token(to_encode)
 
 
 async def login_user(email: str, password: str):
@@ -35,13 +35,12 @@ async def login_user(email: str, password: str):
             detail="Invalid email or password"
         )
 
-    access_token = create_access_token(
+    access_token = create_token(
         {"sub": user.id}, 
         token_type="access"
     )
-    refresh_token = create_access_token(
+    refresh_token = create_token(
         {"sub": user.id}, 
-        expires_delta=settings.REFRESH_TOKEN_EXPIRE,
         token_type="refresh"
     )
 
@@ -104,23 +103,10 @@ async def refresh_access_token(refresh_token: str):
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        new_access = create_access_token({"sub": user_id}, token_type="access")
+        new_access = create_token({"sub": user_id}, token_type="access")
         return {"access_token": new_access, "token_type": "bearer"}
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
-
-
-async def change_user_password(token: str, old_password: str, new_password: str):
-    if len(new_password) < 8:
-        raise HTTPException(status_code=400, detail="New password must be at least 8 characters")
-    
-    user = await get_current_user(token)
-    if not verify_password(old_password, user.password):
-        raise HTTPException(status_code=400, detail="Old password incorrect")
-
-    hashed_new = hash_password(new_password)
-    await prisma.user.update(where={"id": user.id}, data={"password": hashed_new})
-    return {"detail": "Password changed successfully"}
 
 
 async def get_current_user(token: str = Depends(oauth2_scheme)):

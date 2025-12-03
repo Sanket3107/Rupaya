@@ -1,24 +1,15 @@
-# app/routers/auth.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.security import OAuth2PasswordRequestForm
-from app.models.users import UserCreate, UserOut
-from app.models.auth import RefreshTokenRequest, PasswordChangeRequest
+from app.models.auth import RefreshTokenRequest
 from app.services.auth_service import (
-    register_user,
     login_user,
     logout_user,
     logout_all_sessions,
-    refresh_access_token,
-    change_user_password,
-    get_current_user
+    refresh_access_token
 )
 from app.core.security import oauth2_scheme
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
-@router.post("/register", response_model=UserOut)
-async def register(data: UserCreate):
-    return await register_user(data.name, data.email, data.password)
 
 @router.post("/login")
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
@@ -35,14 +26,3 @@ async def logout_all(token: str = Depends(oauth2_scheme)):
 @router.post("/refresh")
 async def refresh(data: RefreshTokenRequest):
     return await refresh_access_token(data.refresh_token)
-
-@router.post("/change-password")
-async def change_password(
-    data: PasswordChangeRequest,
-    token: str = Depends(oauth2_scheme)
-):
-    return await change_user_password(token, data.old_password, data.new_password)
-
-@router.get("/me", response_model=UserOut)
-async def get_me(current_user: UserOut = Depends(get_current_user)):
-    return current_user

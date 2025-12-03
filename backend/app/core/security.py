@@ -22,31 +22,14 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(
-    data: dict,
-    expires_delta: timedelta | None = None,
-    token_type: str = "access",
-):
-    """Create a JWT access or refresh token."""
+def encode_token(data: dict) -> str:
+    """Encode a dictionary into a JWT token."""
     to_encode = data.copy()
-    to_encode["type"] = token_type  # Explicitly tag type: "access" or "refresh"
-
-    # Pick correct expiry automatically if not provided
-    if expires_delta is None:
-        if token_type == "refresh":
-            expires_delta = getattr(settings, "REFRESH_TOKEN_EXPIRE", timedelta(days=7))
-        else:
-            expires_delta = getattr(settings, "ACCESS_TOKEN_EXPIRE", timedelta(minutes=30))
-
-    expire = datetime.now(timezone.utc) + expires_delta
-    to_encode.update({"exp": expire})
-
-    encoded_jwt = jwt.encode(
+    return jwt.encode(
         to_encode,
         settings.SECRET_KEY,
         algorithm=settings.JWT_ALGORITHM,
     )
-    return encoded_jwt
 
 
 def decode_token(token: str) -> dict | None:
