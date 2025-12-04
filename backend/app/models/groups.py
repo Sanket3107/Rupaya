@@ -1,26 +1,31 @@
 # app/models/groups.py
-from pydantic import BaseModel
-from typing import Optional, List
 from datetime import datetime
+
+from pydantic import BaseModel
+
 from app.models.users import UserOut
+
 
 class GroupCreate(BaseModel):
     name: str
-    description: Optional[str] = None
+    description: str | None = None
+
 
 class GroupUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
+    name: str | None = None
+    description: str | None = None
+
 
 class GroupOut(BaseModel):
     id: str
     name: str
-    description: Optional[str]
-    created_by: Optional[str]
+    description: str | None
+    created_by: str | None
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
+
 
 class GroupMemberOut(BaseModel):
     id: str
@@ -28,8 +33,10 @@ class GroupMemberOut(BaseModel):
     role: str
     created_at: datetime
 
+
 class GroupDetailOut(GroupOut):
-    members: List[GroupMemberOut]
+    members: list[GroupMemberOut]
+
 
 class AddMemberRequest(BaseModel):
     email: str  # Add members by email
