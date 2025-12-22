@@ -1,6 +1,60 @@
 # Rupaya Backend
 
-## How to Run
+## Quick Start with Docker (Recommended)
+
+The easiest way to get started is using Docker Compose, which sets up PostgreSQL and Redis automatically.
+
+1.  **Start the services**:
+    ```bash
+    docker-compose up -d
+    ```
+
+2.  **Verify services are running**:
+    ```bash
+    docker-compose ps
+    ```
+
+3.  **View logs** (optional):
+    ```bash
+    docker-compose logs -f
+    ```
+
+4.  **Stop the services**:
+    ```bash
+    docker-compose down
+    ```
+
+5.  **Stop and remove volumes** (⚠️ deletes all data):
+    ```bash
+    docker-compose down -v
+    ```
+
+### Docker Services
+
+The `docker-compose.yml` includes:
+
+- **PostgreSQL 16** (Alpine)
+  - Port: `5432`
+  - User: `postgres`
+  - Password: `postgres`
+  - Database: `rupaya`
+  - Container: `rupaya-postgres`
+
+- **Redis 7.2** (Alpine)
+  - Port: `6379`
+  - Persistence: Enabled (AOF)
+  - Container: `rupaya-redis`
+
+### Connection Strings for Docker
+
+When using Docker Compose, use these connection strings in your `.env`:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rupaya"
+REDIS_URL="redis://localhost:6379"
+```
+
+## Manual Setup (Without Docker)
 
 1.  **Install Dependencies**:
     ```bash
