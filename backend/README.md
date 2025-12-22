@@ -4,40 +4,46 @@
 
 The easiest way to get started is using Docker Compose, which sets up PostgreSQL and Redis automatically.
 
-1.  **Start the services**:
+1.  **Set up environment variables**:
     ```bash
-    docker-compose up -d
+    cp .env.example .env
+    ```
+    Then edit `.env` and set your own secure passwords for `POSTGRES_PASSWORD` and `SECRET_KEY`.
+
+2.  **Start the services**:
+    ```bash
+    docker-compose -f docker-compose-dev.yml up -d
     ```
 
-2.  **Verify services are running**:
+3.  **Verify services are running**:
     ```bash
-    docker-compose ps
+    docker-compose -f docker-compose-dev.yml ps
     ```
 
-3.  **View logs** (optional):
+4.  **View logs** (optional):
     ```bash
-    docker-compose logs -f
+    docker-compose -f docker-compose-dev.yml logs -f
     ```
 
-4.  **Stop the services**:
+5.  **Stop the services**:
     ```bash
-    docker-compose down
+    docker-compose -f docker-compose-dev.yml down
     ```
 
-5.  **Stop and remove volumes** (⚠️ deletes all data):
+6.  **Stop and remove volumes** (⚠️ deletes all data):
     ```bash
-    docker-compose down -v
+    docker-compose -f docker-compose-dev.yml down -v
     ```
 
 ### Docker Services
 
-The `docker-compose.yml` includes:
+The `docker-compose-dev.yml` includes:
 
 - **PostgreSQL 16** (Alpine)
   - Port: `5432`
-  - User: `postgres`
-  - Password: `postgres`
-  - Database: `rupaya`
+  - User: Set via `POSTGRES_USER` in `.env` (default: `postgres`)
+  - Password: Set via `POSTGRES_PASSWORD` in `.env`
+  - Database: Set via `POSTGRES_DB` in `.env` (default: `rupaya`)
   - Container: `rupaya-postgres`
 
 - **Redis 7.2** (Alpine)
@@ -50,7 +56,7 @@ The `docker-compose.yml` includes:
 When using Docker Compose, use these connection strings in your `.env`:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/rupaya"
+DATABASE_URL="postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@localhost:5432/${POSTGRES_DB}"
 REDIS_URL="redis://localhost:6379"
 ```
 
