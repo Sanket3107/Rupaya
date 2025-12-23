@@ -3,6 +3,7 @@ from enum import Enum
 from uuid import UUID
 
 from pydantic import BaseModel, Field
+from app.models.users import UserOut
 
 
 class SplitType(str, Enum):
@@ -50,7 +51,8 @@ class BillCreate(BillBase):
 class BillResponse(BillBase):
     id: UUID
     group_id: UUID
-    paid_by: UUID  # Who actually paid the bill
+    paid_by: UUID
+    payer: UserOut | None = None  # Add this
     created_by: UUID
     created_at: datetime
     shares: list[BillShareResponse] = []

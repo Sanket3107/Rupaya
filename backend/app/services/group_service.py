@@ -98,19 +98,73 @@ class GroupService:
             },
         )
 
-        return [membership.group for membership in memberships]
+        groups = []
+        for membership in memberships:
+            group = membership.group
+            # Calculate balance for this specific group
+            group.user_balance = await self._calculate_user_balance(str(group.id), user_id)
+            groups.append(group)
+
+        return groups
 
     async def get_group_detail(self, group_id: str, user_id: str):
         # Verify user has access to this group
         await self.check_is_member(user_id, group_id)
 
-        # Get group with members
+        # Get group with members and bills
         group = await prisma.group.find_unique(
             where={"id": group_id},
-            include={"members": {"include": {"user": True}, "where": {"deleted_at": None}}},
+            include={
+                "members": {"include": {"user": True}, "where": {"deleted_at": None}},
+                "bills": {"include": {"payer": True}, "where": {"deleted_at": None}, "order_by": {"created_at": "desc"}},
+            },
         )
 
+        # Calculate additional fields
+        group.user_balance = await self._calculate_user_balance(group_id, user_id)
+        group.total_spent = await self._calculate_total_spent(group_id)
+
         return group
+
+    async def _calculate_user_balance(self, group_id: str, user_id: str) -> float:
+        # 1. How much others owe you in this group (You paid, they haven't settled)
+        owed_result = await prisma.billshare.group_by(
+            by=["user_id"],
+            sum={"amount": True},
+            where={
+                "bill": {
+                    "group_id": group_id,
+                    "paid_by": user_id,
+                    "deleted_at": None
+                },
+                "user_id": {"not": user_id},
+                "paid": False
+            }
+        )
+        total_owed = sum(item["_sum"]["amount"] or 0 for item in owed_result)
+
+        # 2. How much you owe others in this group (They paid, you haven't settled)
+        owe_result = await prisma.billshare.find_many(
+            where={
+                "bill": {
+                    "group_id": group_id,
+                    "paid_by": {"not": user_id},
+                    "deleted_at": None
+                },
+                "user_id": user_id,
+                "paid": False
+            }
+        )
+        total_owe = sum(item.amount or 0 for item in owe_result)
+
+        return total_owed - total_owe
+
+    async def _calculate_total_spent(self, group_id: str) -> float:
+        result = await prisma.bill.aggregate(
+            sum={"total_amount": True},
+            where={"group_id": group_id, "deleted_at": None}
+        )
+        return result["_sum"]["total_amount"] or 0
 
     async def add_member_to_group(
         self, group_id: str, data: AddMemberRequest, added_by_id: str

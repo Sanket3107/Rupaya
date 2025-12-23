@@ -12,7 +12,7 @@ from app.core.exceptions import (
     ValidationError,
 )
 from app.db import prisma
-from app.routers import auth, bills, groups, users
+from app.routers import auth, bills, groups, users, summary
 
 app = FastAPI(title="Rupaya API", openapi_url=f"{settings.api_base_path}/openapi.json")
 
@@ -60,6 +60,7 @@ app.include_router(auth.router, prefix=settings.api_base_path)
 app.include_router(users.router, prefix=settings.api_base_path)
 app.include_router(groups.router, prefix=settings.api_base_path)
 app.include_router(bills.router, prefix=settings.api_base_path)
+app.include_router(summary.router, prefix=settings.api_base_path)
 
 
 @app.get("/")

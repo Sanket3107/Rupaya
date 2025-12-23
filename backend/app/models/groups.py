@@ -3,6 +3,7 @@ from datetime import datetime
 
 from pydantic import BaseModel
 
+from app.models.bills import BillResponse
 from app.models.users import UserOut
 
 
@@ -38,6 +39,7 @@ class GroupMemberOut(BaseModel):
 
 class GroupDetailOut(GroupOut):
     members: list[GroupMemberOut]
+    bills: list[BillResponse] = []
 
 
 class AddMemberRequest(BaseModel):
