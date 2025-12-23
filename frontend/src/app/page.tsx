@@ -1,11 +1,21 @@
 "use client";
 
+import React, { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Wallet, ArrowRight, Shield, Zap, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      router.push("/dashboard");
+    }
+  }, [router]);
   return (
     <div className="min-h-screen bg-background text-foreground selection:bg-primary/20">
       {/* Nav */}

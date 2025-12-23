@@ -33,7 +33,11 @@ interface SummaryData {
     total_owe: number;
 }
 
-export function Sidebar() {
+interface SidebarProps {
+    onAddExpense?: () => void;
+}
+
+export function Sidebar({ onAddExpense }: SidebarProps) {
     const pathname = usePathname();
     const router = useRouter();
     const [summary, setSummary] = React.useState<SummaryData | null>(null);
@@ -123,7 +127,11 @@ export function Sidebar() {
 
             {/* Actions & Footer */}
             <div className="p-4 mt-auto border-t border-border">
-                <Button className="w-full justify-start gap-2 mb-4 bg-foreground text-background hover:bg-foreground/90 rounded-xl" size="md">
+                <Button
+                    className="w-full justify-start gap-2 mb-4 bg-foreground text-background hover:bg-foreground/90 rounded-xl"
+                    size="md"
+                    onClick={onAddExpense}
+                >
                     <PlusCircle className="w-4 h-4" />
                     Add Expense
                 </Button>
