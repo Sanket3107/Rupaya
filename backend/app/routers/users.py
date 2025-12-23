@@ -8,38 +8,27 @@ from app.services.user_service import UserService
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-class UserRouter:
-    def __init__(self):
-        self.user_service = UserService()
-
-    async def register(
-        self,
-        data: UserCreate,
-    ):
-        return await self.user_service.register_user(data.name, data.email, data.password)
-
-    async def get_me(self, current_user: UserOut = Depends(get_current_user)):
-        return current_user
-
-    async def change_password(
-        self,
-        data: PasswordChangeRequest,
-        current_user: UserOut = Depends(get_current_user),
-    ):
-        return await self.user_service.change_user_password(
-            current_user.id, data.old_password, data.new_password
-        )
+user_service = UserService()
 
 
-user_router = UserRouter()
+@router.post("/register", response_model=UserOut)
+async def register(
+    data: UserCreate,
+):
+    return await user_service.register_user(data.name, data.email, data.password)
 
 
-router.add_api_route(
-    "/register", user_router.register, methods=["POST"], response_model=UserOut
-)
-router.add_api_route(
-    "/me", user_router.get_me, methods=["GET"], response_model=UserOut
-)
-router.add_api_route(
-    "/change-password", user_router.change_password, methods=["POST"]
-)
+@router.get("/me", response_model=UserOut)
+async def get_me(current_user: UserOut = Depends(get_current_user)):
+    return current_user
+
+
+@router.post("/change-password")
+async def change_password(
+    data: PasswordChangeRequest,
+    current_user: UserOut = Depends(get_current_user),
+):
+    return await user_service.change_user_password(
+        current_user.id, data.old_password, data.new_password
+    )
+
