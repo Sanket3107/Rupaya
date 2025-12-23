@@ -59,12 +59,12 @@ class GroupService:
         )
 
         # 2. Add initial members
+        added_count = 0
         for email in data.initial_members:
             user = await prisma.user.find_unique(where={"email": email})
             if not user:
-                continue  # Or raise an error? For now, we skip non-existent users
+                continue
             
-            # Prevent double adding creator if they added themselves in the list
             if user.id == creator_id:
                 continue
 
@@ -76,6 +76,12 @@ class GroupService:
                     "created_by": creator_id,
                 }
             )
+            added_count += 1
+
+        if added_count == 0:
+            # Clean up the group if no one else could be added
+            await prisma.group.delete(where={"id": group.id})
+            raise ValidationError("A group must have at least one other valid member.")
 
         return group
 

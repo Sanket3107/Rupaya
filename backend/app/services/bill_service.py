@@ -14,35 +14,6 @@ class BillService:
     def __init__(self, group_service: GroupService):
         self.group_service = group_service
 
-    def _calculate_shares(self, data: BillCreate) -> list[dict]:
-        """
-        Calculate individual share amounts based on split type.
-        Returns a list of dictionaries for Prisma create.
-        """
-        if data.split_type == SplitType.EQUAL:
-            # For EQUAL split, 'shares' contains the users involved (including payer if they owe a part)
-            count = len(data.shares)
-            if count == 0:
-                raise ValidationError("At least one person must be involved in the split")
-            
-            individual_amount = data.total_amount / count
-            return [
-                {"user_id": str(share.user_id), "amount": individual_amount, "paid": False}
-                for share in data.shares
-            ]
-            
-        elif data.split_type == SplitType.EXACT:
-            total_shares = sum(share.amount or 0 for share in data.shares)
-            if abs(total_shares - data.total_amount) > 0.01:
-                raise ValidationError(f"Sum of shares ({total_shares}) must equal total amount ({data.total_amount})")
-            
-            return [
-                {"user_id": str(share.user_id), "amount": share.amount, "paid": False}
-                for share in data.shares
-            ]
-        
-        raise ValidationError(f"Split type {data.split_type} is not yet implemented")
-
     async def create_bill(self, user_id: str, data: BillCreate):
         """
         Create a new bill and its associated shares.
@@ -50,11 +21,11 @@ class BillService:
         # 1. Check if group exists and user is a member
         await self.group_service.check_is_member(user_id, str(data.group_id))
 
-        # 2. Calculate and validate shares
-        shares_create = self._calculate_shares(data)
-
-        # 3. Determine who paid (defaults to creator if not specified)
+        # 2. Determine who paid (defaults to creator if not specified)
         paid_by = str(data.paid_by) if data.paid_by else user_id
+
+        # 3. Calculate and validate shares
+        shares_create = self._calculate_shares(data, paid_by)
 
         # 4. Create Bill with nested Shares
         bill = await prisma.bill.create(
@@ -70,6 +41,42 @@ class BillService:
         )
 
         return bill
+
+    def _calculate_shares(self, data: BillCreate, paid_by: str) -> list[dict]:
+        """
+        Calculate individual share amounts based on split type.
+        Returns a list of dictionaries for Prisma create.
+        """
+        if data.split_type == SplitType.EQUAL:
+            count = len(data.shares)
+            if count == 0:
+                raise ValidationError("At least one person must be involved in the split")
+            
+            individual_amount = data.total_amount / count
+            return [
+                {
+                    "user_id": str(share.user_id), 
+                    "amount": individual_amount, 
+                    "paid": str(share.user_id) == paid_by
+                }
+                for share in data.shares
+            ]
+            
+        elif data.split_type == SplitType.EXACT:
+            total_shares = sum(share.amount or 0 for share in data.shares)
+            if abs(total_shares - data.total_amount) > 0.01:
+                raise ValidationError(f"Sum of shares ({total_shares}) must equal total amount ({data.total_amount})")
+            
+            return [
+                {
+                    "user_id": str(share.user_id), 
+                    "amount": share.amount, 
+                    "paid": str(share.user_id) == paid_by
+                }
+                for share in data.shares
+            ]
+        
+        raise ValidationError(f"Split type {data.split_type} is not yet implemented")
 
     async def get_group_bills(self, user_id: str, group_id: str):
         """
