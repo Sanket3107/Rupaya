@@ -1,6 +1,8 @@
 from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
+from app.core.config import settings
 from app.core.exceptions import (
     ConflictError,
     ForbiddenError,
@@ -12,7 +14,16 @@ from app.core.exceptions import (
 from app.db import prisma
 from app.routers import auth, bills, groups, users
 
-app = FastAPI(title="Rupaya API")
+app = FastAPI(title="Rupaya API", openapi_url=f"{settings.api_base_path}/openapi.json")
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # For development, allow all
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -45,13 +56,13 @@ async def rupaya_exception_handler(request: Request, exc: RupayaException):
     )
 
 
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(groups.router)
-app.include_router(bills.router)
+app.include_router(auth.router, prefix=settings.api_base_path)
+app.include_router(users.router, prefix=settings.api_base_path)
+app.include_router(groups.router, prefix=settings.api_base_path)
+app.include_router(bills.router, prefix=settings.api_base_path)
 
 
 @app.get("/")
 async def root():
-    return {"message": "Rupaya API running 🚀"}
+    return {"message": "Rupaya API running 🚀", "docs": "/docs", "version": "v1"}
 
