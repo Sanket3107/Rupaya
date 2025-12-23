@@ -7,8 +7,13 @@ import { Wallet, Mail, Lock, User, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+
 export default function RegisterPage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -18,12 +23,16 @@ export default function RegisterPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setError("");
 
-        console.log("Registering with:", formData);
-
-        setTimeout(() => {
+        try {
+            await api.post("/users/register", formData);
+            router.push("/login?registered=true");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Registration failed");
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -42,6 +51,12 @@ export default function RegisterPage() {
                     Start managing your shared expenses today
                 </p>
             </div>
+
+            {error && (
+                <div className="mb-6 p-3 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/20 text-center">
+                    {error}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">

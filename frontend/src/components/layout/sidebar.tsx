@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
     LayoutDashboard,
@@ -28,6 +28,12 @@ const navItems = [
 
 export function Sidebar() {
     const pathname = usePathname();
+    const router = useRouter();
+
+    const handleLogout = () => {
+        localStorage.removeItem("token");
+        router.push("/login");
+    };
 
     return (
         <aside className="fixed left-0 top-0 h-screen w-64 border-r border-border bg-card flex flex-col z-40">
@@ -94,7 +100,10 @@ export function Sidebar() {
                     <PlusCircle className="w-4 h-4" />
                     Add Expense
                 </Button>
-                <button className="flex items-center gap-3 w-full px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors rounded-xl hover:bg-destructive/5 text-sm font-medium">
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-muted-foreground hover:text-destructive transition-colors rounded-xl hover:bg-destructive/5 text-sm font-medium"
+                >
                     <LogOut className="w-5 h-5" />
                     Logout
                 </button>

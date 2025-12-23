@@ -7,8 +7,13 @@ import { Wallet, Mail, Lock, Loader2, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+import { useRouter } from "next/navigation";
+import { api } from "@/lib/api";
+
 export default function LoginPage() {
+    const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState("");
     const [formData, setFormData] = useState({
         username: "",
         password: "",
@@ -17,14 +22,21 @@ export default function LoginPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setError("");
 
-        // Simulating API call for now structure
-        // We'll integrate actual fetch handle once backend connection is finalized
-        console.log("Logging in with:", formData);
+        try {
+            const searchParams = new URLSearchParams();
+            searchParams.append("username", formData.username);
+            searchParams.append("password", formData.password);
 
-        setTimeout(() => {
+            const data = await api.login(searchParams);
+            localStorage.setItem("token", data.access_token);
+            router.push("/dashboard");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Invalid credentials");
+        } finally {
             setIsLoading(false);
-        }, 1500);
+        }
     };
 
     return (
@@ -43,6 +55,12 @@ export default function LoginPage() {
                     Enter your credentials to access your account
                 </p>
             </div>
+
+            {error && (
+                <div className="mb-6 p-3 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/20 text-center">
+                    {error}
+                </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
                 <div className="space-y-2">
