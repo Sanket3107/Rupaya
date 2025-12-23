@@ -5,6 +5,8 @@ from app.core.security import oauth2_scheme
 from app.models.auth import RefreshTokenRequest
 from app.services.auth_service import AuthService
 
+router = APIRouter(prefix="/auth", tags=["Auth"])
+
 auth_service = AuthService()
 
 
@@ -42,7 +44,3 @@ async def refresh(
     service: AuthService = Depends(get_auth_service),
 ):
     return await service.refresh_access_token(data.refresh_token)
-
-
-
-
