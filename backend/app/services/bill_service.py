@@ -81,23 +81,35 @@ class BillService:
         
         raise ValidationError(f"Split type {data.split_type} is not yet implemented")
 
-    async def get_group_bills(self, user_id: str, group_id: str):
+    async def get_group_bills(self, user_id: str, group_id: str, skip: int = 0, limit: int = 20):
         """
-        Retrieve all bills for a specific group.
+        Retrieve bills for a specific group with pagination.
         Verifies that the requesting user is a member of that group.
         """
         # Check membership
         await self.group_service.check_is_member(user_id, group_id)
 
+        # Get total count for this group
+        total = await prisma.bill.count(where={"group_id": group_id, "deleted_at": None})
+
         bills = await prisma.bill.find_many(
-            where={"group_id": group_id},
+            where={"group_id": group_id, "deleted_at": None},
             include={
                 "shares": {"include": {"user": True}},
                 "payer": True,
             },
             order={"created_at": "desc"},
+            skip=skip,
+            take=limit,
         )
-        return bills
+
+        return {
+            "items": bills,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "has_more": skip + len(bills) < total
+        }
 
     async def get_bill_details(self, user_id: str, bill_id: str):
         """

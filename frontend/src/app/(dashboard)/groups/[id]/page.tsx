@@ -64,6 +64,7 @@ export default function GroupDetailPage() {
     const [group, setGroup] = useState<GroupDetail | null>(null);
     const [loading, setLoading] = useState(true);
     const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
 
     const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
     const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
@@ -93,6 +94,12 @@ export default function GroupDetailPage() {
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleExpenseAdded = () => {
+        setIsAddExpenseOpen(false);
+        setRefreshTrigger(prev => prev + 1);
+        fetchGroupDetail();
     };
 
     const removeMember = async (memberId: string) => {
@@ -153,9 +160,10 @@ export default function GroupDetailPage() {
                 {/* Right Column: Bills/Expenses */}
                 <div className="lg:col-span-2">
                     <ExpenseList
-                        bills={group.bills}
+                        groupId={id}
                         currentUserId={currentUser?.id}
                         onAddExpense={() => setIsAddExpenseOpen(true)}
+                        refreshTrigger={refreshTrigger}
                     />
                 </div>
             </div>
@@ -164,7 +172,7 @@ export default function GroupDetailPage() {
             <AddExpenseModal
                 isOpen={isAddExpenseOpen}
                 onClose={() => setIsAddExpenseOpen(false)}
-                onSuccess={fetchGroupDetail}
+                onSuccess={handleExpenseAdded}
                 currentUser={currentUser}
                 initialGroupId={id}
                 members={group.members}

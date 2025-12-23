@@ -111,7 +111,7 @@ class GroupService:
         # Verify user has access to this group
         await self.check_is_member(user_id, group_id)
 
-        # Get group with members and bills
+        # Get group with members and bills (limited to first 10 for performance)
         group = await prisma.group.find_unique(
             where={"id": group_id},
             include={
@@ -120,6 +120,7 @@ class GroupService:
                     "include": {"payer": True, "shares": {"include": {"user": True}}},
                     "where": {"deleted_at": None},
                     "order_by": {"created_at": "desc"},
+                    "take": 10,
                 },
             },
         )
