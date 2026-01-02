@@ -1,18 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     History,
     Receipt,
     ArrowUpRight,
-    ArrowDownLeft,
-    Search,
-    Filter,
-    Calendar,
-    ChevronDown
+    ArrowDownLeft
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { BillsAPI, type Bill } from "@/lib/api";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";

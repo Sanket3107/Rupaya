@@ -9,11 +9,14 @@ import { Input } from "@/components/ui/input";
 
 import { useRouter } from "next/navigation";
 import { AuthAPI } from "@/lib/api/auth";
+import { ErrorBox } from "@/components/ui/ErrorBox";
+import { useToast } from "@/components/ui/Toast";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -22,7 +25,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError("");
+    setError(null);
 
     try {
       const data = (await AuthAPI.login(formData.username, formData.password)) as {
@@ -33,6 +36,7 @@ export default function LoginPage() {
       if (data.refresh_token) {
         localStorage.setItem("refresh_token", data.refresh_token);
       }
+      toast("Welcome back! Loading your dashboard...", "success");
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Invalid credentials");
@@ -58,11 +62,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      {error && (
-        <div className="mb-6 p-3 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/20 text-center">
-          {error}
-        </div>
-      )}
+      <ErrorBox error={error} className="mb-6" />
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">

@@ -16,7 +16,6 @@ export function useInfiniteScroll<T>({
     const [items, setItems] = useState<T[]>(initialItems);
     const [loading, setLoading] = useState(false);
     const [hasMore, setHasMore] = useState(true);
-    const [skip, setSkip] = useState(0);
     const [error, setError] = useState<Error | null>(null);
 
     // Use refs to avoid closure staleness and unnecessary effect re-runs
@@ -38,7 +37,6 @@ export function useInfiniteScroll<T>({
 
             const newSkip = currentSkip + result.items.length;
             skipRef.current = newSkip;
-            setSkip(newSkip);
 
             hasMoreRef.current = result.has_more;
             setHasMore(result.has_more);
@@ -53,7 +51,6 @@ export function useInfiniteScroll<T>({
     const reset = useCallback(() => {
         setItems([]);
         skipRef.current = 0;
-        setSkip(0);
         hasMoreRef.current = true;
         setHasMore(true);
         setError(null);

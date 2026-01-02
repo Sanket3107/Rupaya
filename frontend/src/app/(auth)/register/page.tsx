@@ -9,11 +9,14 @@ import { Input } from "@/components/ui/input";
 
 import { useRouter } from "next/navigation";
 import { UsersAPI } from "@/lib/api/users";
+import { ErrorBox } from "@/components/ui/ErrorBox";
+import { useToast } from "@/components/ui/Toast";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -27,6 +30,7 @@ export default function RegisterPage() {
 
     try {
       await UsersAPI.register(formData);
+      toast("Account created successfully! Please sign in.", "success");
       router.push("/login?registered=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");
@@ -52,11 +56,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {error && (
-        <div className="mb-6 p-3 rounded-lg bg-destructive/10 text-destructive text-xs font-semibold border border-destructive/20 text-center">
-          {error}
-        </div>
-      )}
+      <ErrorBox error={error} className="mb-6" />
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
