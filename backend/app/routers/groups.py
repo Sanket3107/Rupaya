@@ -9,6 +9,7 @@ from app.models.groups import (
     GroupMemberOut,
     GroupOut,
 )
+from app.models.pagination import PaginatedResponse
 from app.models.users import UserOut
 from app.services.auth_service import get_current_user
 from app.services.group_service import GroupService
@@ -32,12 +33,20 @@ async def create_group(
     return await service.create_group(data, current_user.id)
 
 
-@router.get("/", response_model=list[GroupOut])
+@router.get("/", response_model=PaginatedResponse[GroupOut])
 async def get_user_groups(
+    search: str | None = None,
+    skip: int = 0,
+    limit: int = 20,
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.get_user_groups(current_user.id)
+    """
+    Get all groups for the current user with search and pagination metadata.
+    """
+    return await service.get_user_groups(
+        user_id=current_user.id, search=search, skip=skip, limit=limit
+    )
 
 
 @router.get("/{group_id}", response_model=GroupDetailOut)
@@ -56,9 +65,7 @@ async def add_member(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.add_member_to_group(
-        str(group_id), data, current_user.id
-    )
+    return await service.add_member_to_group(str(group_id), data, current_user.id)
 
 
 @router.delete("/{group_id}/members/{member_id}")
@@ -68,6 +75,4 @@ async def remove_member(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.remove_member_from_group(
-        str(group_id), str(member_id), current_user.id
-    )
+    return await service.remove_member_from_group(str(group_id), str(member_id), current_user.id)
