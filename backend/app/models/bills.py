@@ -49,11 +49,20 @@ class BillCreate(BillBase):
 
 
 
+class GroupMinimal(BaseModel):
+    id: UUID
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class BillResponse(BillBase):
     id: UUID
     group_id: UUID
     paid_by: UUID
-    payer: UserOut | None = None  # Add this
+    payer: UserOut | None = None
+    group: GroupMinimal | None = None
     created_by: UUID
     created_at: datetime
     shares: list[BillShareResponse] = []

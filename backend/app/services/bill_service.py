@@ -81,19 +81,26 @@ class BillService:
         
         raise ValidationError(f"Split type {data.split_type} is not yet implemented")
 
-    async def get_group_bills(self, user_id: str, group_id: str, skip: int = 0, limit: int = 20):
+    async def get_group_bills(
+        self, user_id: str, group_id: str, skip: int = 0, limit: int = 20, search: str = None
+    ):
         """
-        Retrieve bills for a specific group with pagination.
+        Retrieve bills for a specific group with pagination and optional search.
         Verifies that the requesting user is a member of that group.
         """
         # Check membership
         await self.group_service.check_is_member(user_id, group_id)
 
+        # Build where clause
+        where = {"group_id": group_id, "deleted_at": None}
+        if search:
+            where["description"] = {"contains": search, "mode": "insensitive"}
+
         # Get total count for this group
-        total = await prisma.bill.count(where={"group_id": group_id, "deleted_at": None})
+        total = await prisma.bill.count(where=where)
 
         bills = await prisma.bill.find_many(
-            where={"group_id": group_id, "deleted_at": None},
+            where=where,
             include={
                 "shares": {"include": {"user": True}},
                 "payer": True,
@@ -108,7 +115,41 @@ class BillService:
             "total": total,
             "skip": skip,
             "limit": limit,
-            "has_more": skip + len(bills) < total
+            "has_more": skip + len(bills) < total,
+        }
+
+    async def get_user_activity(self, user_id: str, skip: int = 0, limit: int = 20):
+        """
+        Retrieve all bills where the user is involved (payer or debtor).
+        """
+        where = {
+            "OR": [
+                {"paid_by": user_id},
+                {"shares": {"some": {"user_id": user_id}}},
+            ],
+            "deleted_at": None,
+        }
+
+        total = await prisma.bill.count(where=where)
+
+        bills = await prisma.bill.find_many(
+            where=where,
+            include={
+                "shares": {"include": {"user": True}},
+                "payer": True,
+                "group": True,
+            },
+            order={"created_at": "desc"},
+            skip=skip,
+            take=limit,
+        )
+
+        return {
+            "items": bills,
+            "total": total,
+            "skip": skip,
+            "limit": limit,
+            "has_more": skip + len(bills) < total,
         }
 
     async def get_bill_details(self, user_id: str, bill_id: str):

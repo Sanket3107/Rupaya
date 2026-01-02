@@ -218,9 +218,9 @@ export default function GroupDetailPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Members & Management */}
-        <div className="lg:col-span-1 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Members & Management - STICKY on Desktop */}
+        <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-8">
           <MemberList
             members={group.members}
             currentUserId={currentUser?.id}
@@ -249,8 +249,8 @@ export default function GroupDetailPage() {
           </div>
         </div>
 
-        {/* Right Column: Bills/Expenses */}
-        <div className="lg:col-span-2">
+        {/* Right Column: Bills/Expenses - Long List */}
+        <div className="lg:col-span-8">
           <ExpenseList
             groupId={id}
             currentUserId={currentUser?.id}

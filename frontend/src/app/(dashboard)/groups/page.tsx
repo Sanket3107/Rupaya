@@ -39,6 +39,7 @@ export default function GroupsPage() {
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [newGroupName, setNewGroupName] = React.useState("");
   const [memberEmail, setMemberEmail] = React.useState("");
+  const [groupSearch, setGroupSearch] = React.useState("");
 
   interface SearchUser {
     id: string;
@@ -137,16 +138,26 @@ export default function GroupsPage() {
             Manage your shared expenses with friends and family.
           </p>
         </div>
-        <Button
-          onClick={() => setIsModalOpen(true)}
-          className="rounded-xl shadow-lg shadow-primary/20"
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          Create New Group
-        </Button>
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+          <div className="relative flex-1 sm:w-64">
+            <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search groups..."
+              className="pl-9 bg-secondary/20 border-border/50 rounded-xl"
+              value={groupSearch}
+              onChange={(e) => setGroupSearch(e.target.value)}
+            />
+          </div>
+          <Button
+            onClick={() => setIsModalOpen(true)}
+            className="rounded-xl shadow-lg shadow-primary/20"
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Create New Group
+          </Button>
+        </div>
       </div>
 
-      {/* Groups Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {isLoading ? (
           // Loading skeletons
@@ -156,68 +167,90 @@ export default function GroupsPage() {
               className="h-64 bg-card/50 border border-border animate-pulse rounded-2xl"
             />
           ))
-        ) : groups.length > 0 ? (
-          groups.map((group, i) => (
-            <motion.div
-              key={group.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
-              className="group relative bg-card border border-border rounded-2xl p-6 hover:border-primary/50 hover:shadow-xl transition-all duration-300"
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-                  <Users className="w-6 h-6" />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="rounded-full h-8 w-8"
-                >
-                  <MoreVertical className="w-4 h-4 text-muted-foreground" />
-                </Button>
-              </div>
-
-              <div className="space-y-1">
-                <h3 className="text-xl font-bold tracking-tight">
-                  {group.name}
-                </h3>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span>{group.members?.length || 0} members</span>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-border flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-                    Balance
-                  </p>
-                  <p
-                    className={cn(
-                      "text-lg font-bold",
-                      (group.user_balance || 0) > 0
-                        ? "text-emerald-500"
-                        : (group.user_balance || 0) < 0
-                          ? "text-rose-500"
-                          : "text-muted-foreground",
-                    )}
-                  >
-                    {(group.user_balance || 0) > 0 ? "+" : ""}₹
-                    {((group.user_balance || 0)).toLocaleString()}
-                  </p>
-                </div>
-                <Link href={`/groups/${group.id}`}>
+        ) : groups.filter(g => g.name.toLowerCase().includes(groupSearch.toLowerCase())).length > 0 ? (
+          groups
+            .filter((g) => g.name.toLowerCase().includes(groupSearch.toLowerCase()))
+            .map((group, i) => (
+              <motion.div
+                key={group.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="group relative bg-card border border-border rounded-2xl p-6 hover:border-primary/50 hover:shadow-xl transition-all duration-300"
+              >
+                <div className="flex justify-between items-start mb-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+                    <Users className="w-6 h-6" />
+                  </div>
                   <Button
-                    size="sm"
-                    variant="secondary"
-                    className="rounded-lg group-hover:bg-primary group-hover:text-white transition-colors"
+                    variant="ghost"
+                    size="icon"
+                    className="rounded-full h-8 w-8"
                   >
-                    View <ChevronRight className="ml-1 w-4 h-4" />
+                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
                   </Button>
-                </Link>
-              </div>
-            </motion.div>
-          ))
+                </div>
+
+                <div className="space-y-1">
+                  <h3 className="text-xl font-bold tracking-tight">
+                    {group.name}
+                  </h3>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span>{group.members?.length || 0} members</span>
+                  </div>
+                </div>
+
+                <div className="mt-6 pt-6 border-t border-border flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                      Balance
+                    </p>
+                    <p
+                      className={cn(
+                        "text-lg font-bold",
+                        (group.user_balance || 0) > 0
+                          ? "text-emerald-500"
+                          : (group.user_balance || 0) < 0
+                            ? "text-rose-500"
+                            : "text-muted-foreground",
+                      )}
+                    >
+                      {(group.user_balance || 0) > 0 ? "+" : ""}₹
+                      {((group.user_balance || 0)).toLocaleString()}
+                    </p>
+                  </div>
+                  <Link href={`/groups/${group.id}`}>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="rounded-lg group-hover:bg-primary group-hover:text-white transition-colors"
+                    >
+                      View <ChevronRight className="ml-1 w-4 h-4" />
+                    </Button>
+                  </Link>
+                </div>
+              </motion.div>
+            ))
+        ) : groupSearch ? (
+          /* No Search Results */
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="col-span-full py-20 text-center border-2 border-dashed border-border rounded-3xl bg-secondary/5"
+          >
+            <Users className="w-12 h-12 text-muted-foreground/30 mx-auto mb-4" />
+            <h4 className="text-xl font-bold">No groups found</h4>
+            <p className="text-muted-foreground">
+              No groups match &quot;{groupSearch}&quot;
+            </p>
+            <Button
+              variant="ghost"
+              className="mt-2 text-primary hover:bg-primary/5"
+              onClick={() => setGroupSearch("")}
+            >
+              Clear Search
+            </Button>
+          </motion.div>
         ) : (
           /* Empty State */
           <motion.div
@@ -230,7 +263,7 @@ export default function GroupsPage() {
               <UserPlus className="w-8 h-8 text-muted-foreground" />
             </div>
             <div>
-              <h4 className="text-xl font-bold">No groups found</h4>
+              <h4 className="text-xl font-bold">No groups joined</h4>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
                 Create your first group to start splitting expenses with
                 friends.

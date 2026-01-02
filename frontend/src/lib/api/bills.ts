@@ -13,13 +13,16 @@ export interface Bill {
   id: string;
   description: string;
   total_amount: number;
-  payer_id: string;
+  paid_by: string;
   payer?: {
     id: string;
     name: string;
     email: string;
   };
   group_id: string;
+  group?: {
+    name: string;
+  };
   created_at: string;
   shares: BillShare[];
 }
@@ -38,14 +41,25 @@ export const BillsAPI = {
     return api.post<Bill>("/bills/", data);
   },
 
-  getGroupBills(groupId: string, skip = 0, limit = 20) {
-    return api.get<PaginatedResponse<Bill>>(
-      `/bills/group/${groupId}?skip=${skip}&limit=${limit}`
-    );
+  getGroupBills(groupId: string, skip = 0, limit = 20, search?: string) {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    if (search) params.append("search", search);
+    return api.get<PaginatedResponse<Bill>>(`/bills/group/${groupId}?${params.toString()}`);
   },
 
-  getDetail(billId: string) {
-    return api.get<Bill>(`/bills/${billId}`);
+  getActivity(skip = 0, limit = 20) {
+    const params = new URLSearchParams({
+      skip: skip.toString(),
+      limit: limit.toString(),
+    });
+    return api.get<PaginatedResponse<Bill>>(`/bills/activity?${params.toString()}`);
+  },
+
+  getDetail(id: string) {
+    return api.get<Bill>(`/bills/${id}`);
   },
 
   markShareAsPaid(shareId: string) {

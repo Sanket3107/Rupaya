@@ -42,7 +42,7 @@ export default function DashboardLayout({
 
   // Handle sidebar toggle via custom event for simplicity in this structure
   React.useEffect(() => {
-    const handleToggle = (e: any) => setIsSidebarCollapsed(e.detail);
+    const handleToggle = (e: Event) => setIsSidebarCollapsed((e as CustomEvent).detail);
     window.addEventListener('sidebar-toggle', handleToggle);
     return () => window.removeEventListener('sidebar-toggle', handleToggle);
   }, []);
