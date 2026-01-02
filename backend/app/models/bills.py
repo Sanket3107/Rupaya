@@ -14,7 +14,7 @@ class SplitType(str, Enum):
 
 class BillShareBase(BaseModel):
     user_id: UUID
-    amount: float | None = Field(None, gt=0, description="Amount owed by this user. Required for EXACT split.")
+    amount: float | None = Field(None, ge=0, description="Amount owed by this user. Required for EXACT split.")
 
 
 class BillShareCreate(BillShareBase):

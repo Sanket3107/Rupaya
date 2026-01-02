@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 
 import { useRouter } from "next/navigation";
 import { api } from "@/lib/http";
+import { UsersAPI } from "@/lib/api/users";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,7 +27,7 @@ export default function RegisterPage() {
     setError("");
 
     try {
-      await api.post("/users/register", formData);
+      await UsersAPI.register(formData);
       router.push("/login?registered=true");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Registration failed");

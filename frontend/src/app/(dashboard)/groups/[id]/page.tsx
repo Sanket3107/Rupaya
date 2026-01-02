@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Settings, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/http";
+import { GroupsAPI, UsersAPI, type GroupMember } from "@/lib/api";
 
 // Extracted Components
 import { GroupHeader } from "@/components/groups/GroupHeader";
@@ -69,32 +69,58 @@ export default function GroupDetailPage() {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
 
-  useEffect(() => {
-    if (id) {
-      fetchGroupDetail();
-      fetchCurrentUser();
-    }
-  }, [id]);
-
-  const fetchCurrentUser = async () => {
+  // Moved fetch functions inside useEffect or wrapped in useCallback to satisfy linter
+  const fetchGroupDetail = React.useCallback(async () => {
     try {
-      const user = await UsersAPI.me();
-      setCurrentUser(user);
-    } catch (error) {
-      console.error("Failed to fetch current user:", error);
-    }
-  };
+      const data = await GroupsAPI.getDetail(id);
 
-  const fetchGroupDetail = async () => {
-    try {
-      const data = await GroupsAPI.detail(id);
-      setGroup(data);
+      // Transform API data to match local interface expected by MemberList
+      // Local Member expects { id, role, user: { id, name, email } }
+      // API now returns nested members structure!
+      const transformedMembers: Member[] = data.members.map((m: GroupMember) => ({
+        id: m.id,
+        role: (m.role as "ADMIN" | "MEMBER") || "MEMBER",
+        user: {
+          id: m.user.id,
+          name: m.user.name,
+          email: m.user.email
+        }
+      }));
+
+      // Construct the local GroupDetail object
+      const fullGroup: GroupDetail = {
+        id: data.id,
+        name: data.name,
+        type: "SHARED", // Default
+        members: transformedMembers,
+        bills: [], // API doesn't return bills in detail view apparently? Or we need separate call
+        total_spent: 0,
+        user_balance: 0
+      };
+
+      setGroup(fullGroup);
     } catch (error) {
       console.error("Failed to fetch group:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const user = await UsersAPI.getCurrentUser();
+        setCurrentUser(user);
+      } catch (error) {
+        console.error("Failed to fetch current user:", error);
+      }
+    };
+
+    if (id) {
+      fetchGroupDetail();
+      fetchCurrentUser();
+    }
+  }, [id, fetchGroupDetail]);
 
   const handleExpenseAdded = () => {
     setIsAddExpenseOpen(false);
@@ -105,8 +131,9 @@ export default function GroupDetailPage() {
   const removeMember = async (memberId: string) => {
     if (!confirm("Are you sure you want to remove this member?")) return;
     try {
-      await api.delete(`/groups/${id}/members/${memberId}`);
+      await GroupsAPI.removeMember(id, memberId);
       fetchGroupDetail();
+      window.dispatchEvent(new Event("refresh-summary"));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Failed to remove member");
     }
@@ -188,7 +215,14 @@ export default function GroupDetailPage() {
         onSuccess={handleExpenseAdded}
         currentUser={currentUser}
         initialGroupId={id}
-        members={group.members}
+        members={group.members.map((m) => ({
+          id: m.user.id,
+          name: m.user.name,
+          email: m.user.email,
+          user_id: m.user.id,
+          role: "MEMBER",
+          user: m.user
+        } as unknown as GroupMember))} // Temporary cast until we fully align AddExpenseModal types
       />
 
       <InviteMemberModal

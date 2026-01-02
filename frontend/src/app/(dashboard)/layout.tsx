@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
-import { api } from "@/lib/http";
+import { UsersAPI } from "@/lib/api/users";
 
 export default function DashboardLayout({
   children,
@@ -25,7 +25,7 @@ export default function DashboardLayout({
 
     const fetchUser = async () => {
       try {
-        const user = await UsersAPI.me();
+        const user = await UsersAPI.getCurrentUser();
         setCurrentUser(user);
         setIsCheckingAuth(false);
       } catch (error) {

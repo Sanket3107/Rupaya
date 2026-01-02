@@ -4,31 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Receipt, ArrowUpRight, ArrowDownLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/http";
-
-interface BillShare {
-  id: string;
-  user_id: string;
-  amount: number;
-  paid: boolean;
-  user: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Bill {
-  id: string;
-  description: string;
-  total_amount: number;
-  split_type: "EQUAL" | "EXACT" | "PERCENTAGE";
-  created_at: string;
-  payer: {
-    id: string;
-    name: string;
-  } | null;
-  shares: BillShare[];
-}
+import { BillsAPI, type Bill } from "@/lib/api";
 
 interface ExpenseListProps {
   groupId: string;
@@ -36,14 +12,6 @@ interface ExpenseListProps {
   onAddExpense: () => void;
   // We can use this to trigger a refresh from the parent
   refreshTrigger?: number;
-}
-
-interface PaginatedResponse<T> {
-  items: T[];
-  total: number;
-  skip: number;
-  limit: number;
-  has_more: boolean;
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -60,6 +28,39 @@ export function ExpenseList({
   const [hasMore, setHasMore] = useState(true);
   const [skip, setSkip] = useState(0);
 
+  const fetchInitialBills = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await BillsAPI.getGroupBills(groupId, 0, ITEMS_PER_PAGE);
+      setBills(response.items);
+      setSkip(response.items.length);
+      setHasMore(response.items.length >= ITEMS_PER_PAGE); // Simple check, or response.total > ... if available
+    } catch (error) {
+      console.error("Failed to fetch bills:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [groupId]);
+
+  const fetchMoreBills = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+    setLoadingMore(true);
+    try {
+      const response = await BillsAPI.getGroupBills(groupId, skip, ITEMS_PER_PAGE);
+      if (response.items.length > 0) {
+        setBills((prev) => [...prev, ...response.items]);
+        setSkip((prev) => prev + response.items.length);
+        setHasMore(response.items.length >= ITEMS_PER_PAGE);
+      } else {
+        setHasMore(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch more bills:", error);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [groupId, hasMore, loadingMore, skip]);
+
   // Intersection Observer for Infinite Scroll
   const observer = useRef<IntersectionObserver | null>(null);
   const lastElementRef = useCallback(
@@ -75,46 +76,13 @@ export function ExpenseList({
 
       if (node) observer.current.observe(node);
     },
-    [loading, loadingMore, hasMore],
+    [loading, loadingMore, hasMore, fetchMoreBills],
   );
-
-  const fetchInitialBills = async () => {
-    setLoading(true);
-    try {
-      const response = await BillsAPI.byGroup(groupId, 0, ITEMS_PER_PAGE);
-      setBills(response.items);
-      setSkip(response.items.length);
-      setHasMore(response.has_more);
-    } catch (error) {
-      console.error("Failed to fetch bills:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMoreBills = async () => {
-    if (loadingMore || !hasMore) return;
-    setLoadingMore(true);
-    try {
-      const response = await BillsAPI.byGroup(groupId, skip, ITEMS_PER_PAGE);
-      if (response.items.length > 0) {
-        setBills((prev) => [...prev, ...response.items]);
-        setSkip((prev) => prev + response.items.length);
-        setHasMore(response.has_more);
-      } else {
-        setHasMore(false);
-      }
-    } catch (error) {
-      console.error("Failed to fetch more bills:", error);
-    } finally {
-      setLoadingMore(false);
-    }
-  };
 
   // Initial load and manual refresh
   useEffect(() => {
     fetchInitialBills();
-  }, [groupId, refreshTrigger]);
+  }, [fetchInitialBills, refreshTrigger]);
 
   if (loading) {
     return (
@@ -145,9 +113,9 @@ export function ExpenseList({
           <>
             {bills.map((bill, index) => {
               const myShare = bill.shares.find(
-                (s) => s.user_id === currentUserId,
+                (s) => s.user_id === currentUserId
               );
-              const isPayer = bill.payer?.id === currentUserId;
+              const isPayer = bill.payer_id === currentUserId;
               const isLastItem = index === bills.length - 1;
 
               return (
@@ -167,7 +135,7 @@ export function ExpenseList({
                       <p className="text-[10px] text-muted-foreground">
                         Paid by{" "}
                         <span className="font-semibold text-foreground/80">
-                          {isPayer ? "You" : bill.payer?.name || "Unknown"}
+                          {isPayer ? "You" : bill.payer_name || "Unknown"}
                         </span>{" "}
                         • {new Date(bill.created_at).toLocaleDateString()}
                       </p>
@@ -179,7 +147,7 @@ export function ExpenseList({
                         <p
                           className={cn(
                             "text-xs font-bold",
-                            isPayer ? "text-emerald-500" : "text-rose-500",
+                            isPayer ? "text-emerald-500" : "text-rose-500"
                           )}
                         >
                           {isPayer ? (
@@ -198,7 +166,7 @@ export function ExpenseList({
                           )}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase font-medium">
-                          {myShare.paid ? "Settled" : "Pending"}
+                          {myShare.is_paid ? "Settled" : "Pending"}
                         </p>
                       </div>
                     )}
@@ -223,7 +191,7 @@ export function ExpenseList({
 
             {!hasMore && bills.length > 0 && (
               <p className="text-center text-[10px] text-muted-foreground uppercase font-black tracking-widest py-8 opacity-40">
-                You've reached the end
+                You&apos;ve reached the end
               </p>
             )}
           </>

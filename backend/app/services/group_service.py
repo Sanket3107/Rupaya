@@ -116,25 +116,24 @@ class GroupService:
             }
 
         # 3. Get total count and the paginated records
-        # We use a batch query to run both at once for better performance
-        total, memberships = await prisma.batch_(
-            prisma.groupmember.count(where=where_filter),
-            prisma.groupmember.find_many(
-                where=where_filter,
-                include={
-                    "group": {
-                        "include": {
-                            "members": {
-                                "include": {"user": True},
-                                "where": {"deleted_at": None},
-                            }
+        # 3. Get total count and the paginated records
+        # Running sequentially is the simplest alternative if you prefer not to use asyncio.gather
+        total = await prisma.groupmember.count(where=where_filter)
+        memberships = await prisma.groupmember.find_many(
+            where=where_filter,
+            include={
+                "group": {
+                    "include": {
+                        "members": {
+                            "include": {"user": True},
+                            "where": {"deleted_at": None},
                         }
                     }
-                },
-                skip=skip,
-                take=limit,
-                order_by={"created_at": "desc"},
-            ),
+                }
+            },
+            skip=skip,
+            take=limit,
+            order={"created_at": "desc"},
         )
 
         # 4. Transform the data and calculate balances
@@ -236,22 +235,42 @@ class GroupService:
         if not user_to_add:
             raise NotFoundError("User not found")
 
-        # Check if already a member
+        # Check if already a member (including soft-deleted)
+        # using find_first to ensure we find it regardless of composite key quirks
         existing_member = await prisma.groupmember.find_first(
-            where={"group_id": group_id, "user_id": user_to_add.id, "deleted_at": None}
+            where={
+                "user_id": user_to_add.id,
+                "group_id": group_id
+            }
         )
 
         if existing_member:
-            raise ValidationError("User is already a member of this group")
+            if existing_member.deleted_at is None:
+                raise ValidationError("User is already a member of this group")
+            
+            # Restore soft-deleted member
+            member = await prisma.groupmember.update(
+                where={"id": existing_member.id},
+                data={
+                    "deleted_at": None,
+                    "deleted_by": None,
+                    "role": data.role,
+                    "updated_by": added_by_id,
+                    "updated_at": datetime.utcnow()
+                },
+                include={"user": True}
+            )
+            return member
 
-        # Add member
+        # Create new member
         member = await prisma.groupmember.create(
             data={
                 "user_id": user_to_add.id,
                 "group_id": group_id,
                 "role": data.role,
                 "created_by": added_by_id,
-            }
+            },
+            include={"user": True}
         )
 
         return member

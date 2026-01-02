@@ -8,7 +8,7 @@ interface GroupHeaderProps {
     group: {
         id: string;
         name: string;
-        members: any[];
+        members: unknown[];
     };
     onAddExpense: () => void;
     onInviteMember: () => void;

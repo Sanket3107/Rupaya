@@ -17,13 +17,19 @@ import { cn } from "@/lib/utils"; // Assuming cn utility is available here
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
 
-import { api } from "@/lib/http";
+import { GroupsAPI, UsersAPI } from "@/lib/api";
+
+interface GroupMember {
+  id: string;
+  name: string;
+  email: string;
+}
 
 interface Group {
   id: string;
   name: string;
-  owner_id: string;
-  members?: any[];
+  owner_id?: string;
+  members?: GroupMember[];
   user_balance?: number;
 }
 
@@ -78,7 +84,7 @@ export default function GroupsPage() {
   const fetchGroups = async () => {
     try {
       const data = await GroupsAPI.list();
-      setGroups(data);
+      setGroups(data.items);
     } catch (error) {
       console.error("Failed to fetch groups:", error);
     } finally {
@@ -99,12 +105,13 @@ export default function GroupsPage() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      await api.post("/groups/", {
+      await GroupsAPI.create({
         name: newGroupName,
         initial_members: addedMembers.map((m) => m.email),
       });
       resetModal();
       fetchGroups();
+      window.dispatchEvent(new Event("refresh-summary"));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Failed to create group");
     } finally {
@@ -188,15 +195,15 @@ export default function GroupsPage() {
                   <p
                     className={cn(
                       "text-lg font-bold",
-                      (group as any).user_balance > 0
+                      (group.user_balance || 0) > 0
                         ? "text-emerald-500"
-                        : (group as any).user_balance < 0
+                        : (group.user_balance || 0) < 0
                           ? "text-rose-500"
                           : "text-muted-foreground",
                     )}
                   >
-                    {(group as any).user_balance > 0 ? "+" : ""}₹
-                    {((group as any).user_balance || 0).toLocaleString()}
+                    {(group.user_balance || 0) > 0 ? "+" : ""}₹
+                    {((group.user_balance || 0)).toLocaleString()}
                   </p>
                 </div>
                 <Link href={`/groups/${group.id}`}>
@@ -336,7 +343,7 @@ export default function GroupsPage() {
                   !isSearching &&
                   searchResults.length === 0 && (
                     <div className="absolute z-50 left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl p-4 text-center text-xs text-muted-foreground shadow-xl">
-                      No users found for "{memberEmail}"
+                      No users found for &quot;{memberEmail}&quot;
                     </div>
                   )}
               </div>

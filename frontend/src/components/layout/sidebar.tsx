@@ -13,11 +13,11 @@ import {
   Wallet,
   PlusCircle,
   TrendingUp,
-  ArrowUpRight,
-  ArrowDownLeft,
+  TrendingDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { SummaryAPI } from "@/lib/api";
 
 const navItems = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -25,8 +25,6 @@ const navItems = [
   { name: "Activity", href: "/activity", icon: History },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
-
-import { api } from "@/lib/http";
 
 interface SummaryData {
   total_owed: number;
@@ -45,14 +43,17 @@ export function Sidebar({ onAddExpense }: SidebarProps) {
   React.useEffect(() => {
     const fetchSummary = async () => {
       try {
-        const data = await SummaryAPI.dashboard();
+        const data = await SummaryAPI.getDashboard();
         setSummary(data);
       } catch (error) {
         console.error("Sidebar summary fetch failed:", error);
       }
     };
     fetchSummary();
-  }, [pathname]); // Refresh on navigation
+
+    window.addEventListener("refresh-summary", fetchSummary);
+    return () => window.removeEventListener("refresh-summary", fetchSummary);
+  }, [pathname]); // Refresh on navigation or when triggered
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -92,9 +93,19 @@ export function Sidebar({ onAddExpense }: SidebarProps) {
             >
               {totalBalance > 0 ? "+" : ""}₹{totalBalance.toLocaleString()}
             </h3>
-            <div className="bg-primary/10 p-1.5 rounded-lg">
-              <TrendingUp className="w-4 h-4 text-primary" />
-            </div>
+            {totalBalance > 0 ? (
+              <div className="bg-emerald-500/10 p-1.5 rounded-lg">
+                <TrendingUp className="w-4 h-4 text-emerald-500" />
+              </div>
+            ) : totalBalance < 0 ? (
+              <div className="bg-rose-500/10 p-1.5 rounded-lg">
+                <TrendingDown className="w-4 h-4 text-rose-500" />
+              </div>
+            ) : (
+              <div className="bg-primary/10 p-1.5 rounded-lg">
+                <Wallet className="w-4 h-4 text-primary" />
+              </div>
+            )}
           </div>
           <div className="mt-3 flex gap-2">
             <div className="flex-1 bg-white/50 dark:bg-black/20 rounded-lg p-2 flex flex-col items-center">

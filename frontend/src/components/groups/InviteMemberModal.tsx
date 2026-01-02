@@ -6,6 +6,7 @@ import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/lib/http";
+import { UsersAPI, GroupsAPI } from "@/lib/api";
 
 interface SearchUser {
   id: string;
@@ -57,8 +58,9 @@ export function InviteMemberModal({
 
   const handleInviteUser = async (user: SearchUser) => {
     try {
-      await api.post(`/groups/${groupId}/members`, {
+      await GroupsAPI.addMember(groupId, {
         email: user.email,
+        user_id: user.id,
       });
       onClose();
       setNewMemberEmail("");
@@ -72,7 +74,7 @@ export function InviteMemberModal({
   const handleAddMemberByEmail = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post(`/groups/${groupId}/members`, {
+      await GroupsAPI.addMember(groupId, {
         email: newMemberEmail,
       });
       onClose();
@@ -150,7 +152,7 @@ export function InviteMemberModal({
             !isSearching &&
             searchResults.length === 0 && (
               <div className="absolute z-50 left-0 right-0 top-full mt-2 bg-card border border-border rounded-xl p-4 text-center text-xs text-muted-foreground shadow-xl">
-                No users found for "{newMemberEmail}"
+                No users found for &quot;{newMemberEmail}&quot;
               </div>
             )}
         </div>
@@ -160,7 +162,7 @@ export function InviteMemberModal({
             How to invite
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Type your friend's name or email address. If they are already on
+            Type your friend&apos;s name or email address. If they are already on
             Rupaya, you can select them from the list. If not, you can still add
             them by typing their full email.
           </p>

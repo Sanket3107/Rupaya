@@ -8,12 +8,11 @@ import {
   Users,
   Receipt,
   Plus,
-  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-
-import { api } from "@/lib/http";
+import { SummaryAPI } from "@/lib/api/summary";
+import { UsersAPI } from "@/lib/api/users";
 
 interface SummaryData {
   total_owed: number;
@@ -44,8 +43,8 @@ export default function DashboardPage() {
     const fetchDashboardData = async () => {
       try {
         const [summary, userData] = await Promise.all([
-          SummaryAPI.dashboard(),
-          UsersAPI.me(),
+          SummaryAPI.getDashboard(),
+          UsersAPI.getCurrentUser(),
         ]);
         setData(summary);
         setUser(userData);
@@ -61,14 +60,14 @@ export default function DashboardPage() {
   const stats = [
     {
       label: "You are owed",
-      value: `₹${(data?.total_owed || 0).toLocaleString()}`,
+      value: `₹${(data?.total_owed || 0).toLocaleString()} `,
       icon: ArrowUpRight,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",
     },
     {
       label: "You owe",
-      value: `₹${(data?.total_owe || 0).toLocaleString()}`,
+      value: `₹${(data?.total_owe || 0).toLocaleString()} `,
       icon: ArrowDownLeft,
       color: "text-rose-500",
       bg: "bg-rose-500/10",
@@ -136,7 +135,7 @@ export default function DashboardPage() {
             className="p-6 rounded-2xl bg-card border border-border hover:shadow-md transition-shadow"
           >
             <div
-              className={`w-10 h-10 ${stat.bg} ${stat.color} rounded-xl flex items-center justify-center mb-4`}
+              className={`w - 10 h - 10 ${stat.bg} ${stat.color} rounded - xl flex items - center justify - center mb - 4`}
             >
               <stat.icon className="w-5 h-5" />
             </div>
@@ -160,7 +159,7 @@ export default function DashboardPage() {
                 No recent activity
               </div>
             ) : (
-              data?.recent_activity.map((item, i) => (
+              data?.recent_activity.map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center justify-between p-4 border-b border-border last:border-0 hover:bg-secondary/20 transition-colors"

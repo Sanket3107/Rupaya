@@ -1,24 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, Receipt, ChevronDown } from "lucide-react";
+import { Plus, ChevronDown } from "lucide-react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { api } from "@/lib/http";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
-
-interface Member {
-  id: string;
-  user: User;
-  role: string;
-}
+import { BillsAPI, GroupsAPI, type GroupMember } from "@/lib/api";
 
 interface GroupOption {
   id: string;
@@ -31,8 +19,7 @@ interface AddExpenseModalProps {
   onSuccess?: () => void;
   currentUser: { id: string } | null;
   initialGroupId?: string;
-  // If not on a group page, we might want to pass these or let the component fetch them
-  members?: Member[];
+  members?: GroupMember[];
   groups?: GroupOption[];
 }
 
@@ -53,18 +40,16 @@ export function AddExpenseModal({
   const [exactAmounts, setExactAmounts] = useState<Record<string, string>>({});
   const [isSubmittingBill, setIsSubmittingBill] = useState(false);
 
-  // For when we use this outside a specific group
   const [selectedGroupId, setSelectedGroupId] = useState<string>(
     initialGroupId || "",
   );
-  const [groupMembers, setGroupMembers] = useState<Member[]>(
+  const [groupMembers, setGroupMembers] = useState<GroupMember[]>(
     providedMembers || [],
   );
   const [availableGroups, setAvailableGroups] = useState<GroupOption[]>(
     providedGroups || [],
   );
 
-  // Sync with props
   useEffect(() => {
     if (initialGroupId) setSelectedGroupId(initialGroupId);
   }, [initialGroupId]);
@@ -76,51 +61,48 @@ export function AddExpenseModal({
 
   // Fetch members if group changes and we don't have them
   useEffect(() => {
-    if (selectedGroupId && !providedMembers) {
+    const fetchGroupMembers = async (gid: string) => {
+      try {
+        const data = await GroupsAPI.getDetail(gid);
+        setGroupMembers(data.members || []);
+        setSelectedMemberIds((data.members || []).map((m) => m.user.id));
+      } catch (error) {
+        console.error("Failed to fetch members", error);
+      }
+    };
+
+    if (selectedGroupId && !providedMembers && isOpen) {
       fetchGroupMembers(selectedGroupId);
     }
-  }, [selectedGroupId, providedMembers]);
+  }, [selectedGroupId, providedMembers, isOpen]);
 
   // Fetch groups if not provided
   useEffect(() => {
+    const fetchGroups = async () => {
+      try {
+        const data = await GroupsAPI.list();
+        setAvailableGroups(data.items);
+      } catch (error) {
+        console.error("Failed to fetch groups", error);
+      }
+    };
+
     if (isOpen && !initialGroupId && !providedGroups) {
       fetchGroups();
     }
   }, [isOpen, initialGroupId, providedGroups]);
 
-  const fetchGroups = async () => {
-    try {
-      const data = await GroupsAPI.list();
-      setAvailableGroups(data);
-    } catch (error) {
-      console.error("Failed to fetch groups", error);
-    }
-  };
-
-  const fetchGroupMembers = async (gid: string) => {
-    try {
-      const data = await GroupsAPI.detail(gid);
-      setGroupMembers(data.members || []);
-      // Default select all members
-      setSelectedMemberIds((data.members || []).map((m: any) => m.user.id));
-    } catch (error) {
-      console.error("Failed to fetch members", error);
-    }
-  };
-
-  // Default payer to current user
   useEffect(() => {
     if (currentUser && !payerId) {
       setPayerId(currentUser.id);
     }
   }, [currentUser, payerId]);
 
-  // Default select all members when group members are loaded
   useEffect(() => {
     if (groupMembers.length > 0 && selectedMemberIds.length === 0) {
       setSelectedMemberIds(groupMembers.map((m) => m.user.id));
     }
-  }, [groupMembers]);
+  }, [groupMembers, selectedMemberIds.length]); // Fixed dependency
 
   const handleAddBill = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,7 +135,8 @@ export function AddExpenseModal({
     }
 
     try {
-      await api.post("/bills/", {
+
+      await BillsAPI.create({
         group_id: selectedGroupId,
         description: billTitle,
         total_amount: parseFloat(billAmount),
@@ -161,20 +144,17 @@ export function AddExpenseModal({
         split_type: splitType,
         shares: selectedMemberIds.map((uid) => ({
           user_id: uid,
-          amount:
-            splitType === "EXACT"
-              ? parseFloat(exactAmounts[uid] || "0")
-              : undefined,
-        })),
+          amount: splitType === "EXACT" ? parseFloat(exactAmounts[uid] || "0") : undefined
+        }))
       });
 
       onClose();
-      // Reset form
       setBillTitle("");
       setBillAmount("");
       setExactAmounts({});
 
       if (onSuccess) onSuccess();
+      window.dispatchEvent(new Event("refresh-summary"));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Failed to add expense");
     } finally {
@@ -197,7 +177,6 @@ export function AddExpenseModal({
     >
       <form onSubmit={handleAddBill} className="space-y-6">
         <div className="space-y-4">
-          {/* Group Selection (only if not fixed) */}
           {!initialGroupId && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Group</label>
@@ -260,9 +239,9 @@ export function AddExpenseModal({
                 )}
                 {groupMembers.map((member) => (
                   <button
-                    key={member.user.id}
+                    key={member.user.id} // Use user.id for key
                     type="button"
-                    onClick={() => setPayerId(member.user.id)}
+                    onClick={() => setPayerId(member.user.id)} // Use user.id
                     className={cn(
                       "flex items-center gap-2 p-2 rounded-xl border text-sm transition-all text-left",
                       payerId === member.user.id
@@ -271,12 +250,12 @@ export function AddExpenseModal({
                     )}
                   >
                     <div className="w-6 h-6 shrink-0 rounded-full bg-background/20 flex items-center justify-center text-[10px] font-bold">
-                      {member.user.name.substring(0, 2).toUpperCase()}
+                      {(member.user.name || member.user.email || "??").substring(0, 2).toUpperCase()}
                     </div>
                     <span className="truncate">
                       {member.user.id === currentUser?.id
                         ? "You"
-                        : member.user.name}
+                        : (member.user.name || member.user.email)}
                     </span>
                   </button>
                 ))}
@@ -375,7 +354,7 @@ export function AddExpenseModal({
                         <span className="truncate">
                           {member.user.id === currentUser?.id
                             ? "You"
-                            : member.user.name}
+                            : (member.user.name || member.user.email)}
                         </span>
                       </button>
 
@@ -396,7 +375,6 @@ export function AddExpenseModal({
                                   [member.user.id]: e.target.value,
                                 })
                               }
-                              required
                             />
                           </div>
                         )}

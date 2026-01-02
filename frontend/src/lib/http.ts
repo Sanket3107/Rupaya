@@ -5,6 +5,7 @@ class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
+    isRetry = false,
   ): Promise<T> {
     const token =
       typeof window !== "undefined" ? localStorage.getItem("token") : null;
@@ -20,7 +21,31 @@ class ApiClient {
       headers,
     });
 
-    if (response.status === 401) {
+    if (response.status === 401 && !isRetry && endpoint !== "/auth/login") {
+      const refreshToken = localStorage.getItem("refresh_token");
+      if (refreshToken) {
+        try {
+          // Attempt refresh
+          const refreshRes = await fetch(`${API_BASE_URL}/auth/refresh`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+
+          if (refreshRes.ok) {
+            const data = await refreshRes.json();
+            localStorage.setItem("token", data.access_token);
+            // Retry original request
+            return this.request<T>(endpoint, options, true);
+          }
+        } catch (e) {
+          console.error("Token refresh failed", e);
+        }
+      }
+
+      // If refresh failed or no refresh token, logout
+      localStorage.removeItem("token");
+      localStorage.removeItem("refresh_token");
       throw new Error("UNAUTHORIZED");
     }
 
@@ -29,11 +54,10 @@ class ApiClient {
       try {
         const data = await response.json();
         message = data.detail ?? message;
-      } catch {}
+      } catch { }
       throw new Error(message);
     }
 
-    // 204 / empty responses safety
     if (response.status === 204) {
       return null as T;
     }

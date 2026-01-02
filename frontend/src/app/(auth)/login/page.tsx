@@ -25,12 +25,11 @@ export default function LoginPage() {
     setError("");
 
     try {
-      const searchParams = new URLSearchParams();
-      searchParams.append("username", formData.username);
-      searchParams.append("password", formData.password);
-
-      const data = await AuthAPI.login(searchParams);
+      const data = await AuthAPI.login(formData.username, formData.password);
       localStorage.setItem("token", data.access_token);
+      if ((data as any).refresh_token) {
+        localStorage.setItem("refresh_token", (data as any).refresh_token);
+      }
       router.push("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Invalid credentials");
