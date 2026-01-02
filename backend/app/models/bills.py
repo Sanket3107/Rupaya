@@ -14,7 +14,7 @@ class SplitType(str, Enum):
 
 class BillShareBase(BaseModel):
     user_id: UUID
-    amount: float | None = Field(None, gt=0, description="Amount owed by this user. Required for EXACT split.")
+    amount: float | None = Field(None, ge=0, description="Amount owed by this user. Required for EXACT split.")
 
 
 class BillShareCreate(BillShareBase):
@@ -49,11 +49,20 @@ class BillCreate(BillBase):
 
 
 
+class GroupMinimal(BaseModel):
+    id: UUID
+    name: str
+
+    class Config:
+        from_attributes = True
+
+
 class BillResponse(BillBase):
     id: UUID
     group_id: UUID
     paid_by: UUID
-    payer: UserOut | None = None  # Add this
+    payer: UserOut | None = None
+    group: GroupMinimal | None = None
     created_by: UUID
     created_at: datetime
     shares: list[BillShareResponse] = []

@@ -32,18 +32,32 @@ async def create_bill(
     return await service.create_bill(current_user.id, data)
 
 
-@router.get("/group/{group_id}", response_model=PaginatedResponse[BillResponse])
-async def get_group_bills(
-    group_id: UUID,
+@router.get("/activity", response_model=PaginatedResponse[BillResponse])
+async def get_user_activity(
     skip: int = 0,
     limit: int = 20,
     current_user: UserOut = Depends(get_current_user),
     service: BillService = Depends(get_bill_service),
 ):
     """
-    Get bills for a specific group with pagination.
+    Get all bills involving the current user with pagination.
     """
-    return await service.get_group_bills(current_user.id, str(group_id), skip, limit)
+    return await service.get_user_activity(current_user.id, skip, limit)
+
+
+@router.get("/group/{group_id}", response_model=PaginatedResponse[BillResponse])
+async def get_group_bills(
+    group_id: UUID,
+    skip: int = 0,
+    limit: int = 20,
+    search: str = None,
+    current_user: UserOut = Depends(get_current_user),
+    service: BillService = Depends(get_bill_service),
+):
+    """
+    Get bills for a specific group with pagination and search.
+    """
+    return await service.get_group_bills(current_user.id, str(group_id), skip, limit, search)
 
 
 @router.get("/{bill_id}", response_model=BillResponse)

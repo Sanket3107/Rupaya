@@ -1,6 +1,6 @@
 "use client";
 
-import { Users, UserPlus, Shield, Trash2 } from "lucide-react";
+import { UserPlus, Shield, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface User {

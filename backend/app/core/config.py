@@ -14,9 +14,9 @@ class Settings(BaseSettings):
 
     # === App constants ===
     api_base_path: str = "/api/v1"
-    access_token_expire_minutes: int = 60 * 24  # 1 day
+    access_token_expire_minutes: int = 60
     JWT_ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE: timedelta = timedelta(minutes=30)
+    ACCESS_TOKEN_EXPIRE: timedelta = timedelta(hours=1)
     REFRESH_TOKEN_EXPIRE: timedelta = timedelta(days=7)
 
     class Config:
