@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
-import { Settings, Trash2 } from "lucide-react";
+import { Settings, Trash2, Wallet, ArrowUpRight, ArrowDownLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { GroupsAPI, UsersAPI, type GroupMember } from "@/lib/api";
 
 // Extracted Components
@@ -55,6 +56,8 @@ interface GroupDetail {
   bills: Bill[];
   total_spent: number;
   user_balance: number;
+  total_owed?: number;
+  total_owe?: number;
 }
 
 export default function GroupDetailPage() {
@@ -94,8 +97,10 @@ export default function GroupDetailPage() {
         type: "SHARED", // Default
         members: transformedMembers,
         bills: [], // API doesn't return bills in detail view apparently? Or we need separate call
-        total_spent: 0,
-        user_balance: 0
+        total_spent: data.total_spent || 0,
+        user_balance: data.user_balance || 0,
+        total_owed: data.total_owed || 0,
+        total_owe: data.total_owe || 0
       };
 
       setGroup(fullGroup);
@@ -165,6 +170,53 @@ export default function GroupDetailPage() {
         onAddExpense={() => setIsAddExpenseOpen(true)}
         onInviteMember={() => setIsAddMemberOpen(true)}
       />
+
+      {/* Group Quick Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-card border border-border rounded-3xl p-6 relative overflow-hidden group hover:border-primary/50 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Balance</p>
+            <div className={cn(
+              "p-2 rounded-xl",
+              (group.user_balance || 0) > 0 ? "bg-emerald-500/10 text-emerald-500" : (group.user_balance || 0) < 0 ? "bg-rose-500/10 text-rose-500" : "bg-primary/10 text-primary"
+            )}>
+              <Wallet className="w-4 h-4" />
+            </div>
+          </div>
+          <p className={cn(
+            "text-3xl font-black",
+            (group.user_balance || 0) > 0 ? "text-emerald-500" : (group.user_balance || 0) < 0 ? "text-rose-500" : "text-foreground"
+          )}>
+            {(group.user_balance || 0) > 0 ? "+" : ""}₹{(group.user_balance || 0).toLocaleString()}
+          </p>
+        </div>
+
+        <div className="bg-card border border-border rounded-3xl p-6 relative overflow-hidden group hover:border-emerald-500/50 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Owed</p>
+            <div className="bg-emerald-500/10 p-2 rounded-xl text-emerald-500">
+              <ArrowUpRight className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-3xl font-black text-emerald-500">
+            ₹{(group.total_owed || 0).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">People owe you this much in this group</p>
+        </div>
+
+        <div className="bg-card border border-border rounded-3xl p-6 relative overflow-hidden group hover:border-rose-500/50 transition-all">
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Total Owe</p>
+            <div className="bg-rose-500/10 p-2 rounded-xl text-rose-500">
+              <ArrowDownLeft className="w-4 h-4" />
+            </div>
+          </div>
+          <p className="text-3xl font-black text-rose-500">
+            ₹{(group.total_owe || 0).toLocaleString()}
+          </p>
+          <p className="text-[10px] text-muted-foreground mt-1 font-medium italic">You owe this much in this group</p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Members & Management */}

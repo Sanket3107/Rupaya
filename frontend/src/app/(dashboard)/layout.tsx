@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
 import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
 import { UsersAPI } from "@/lib/api/users";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -15,8 +16,10 @@ export default function DashboardLayout({
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   React.useEffect(() => {
+    // ... logic same ...
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
@@ -37,6 +40,13 @@ export default function DashboardLayout({
     fetchUser();
   }, [router]);
 
+  // Handle sidebar toggle via custom event for simplicity in this structure
+  React.useEffect(() => {
+    const handleToggle = (e: any) => setIsSidebarCollapsed(e.detail);
+    window.addEventListener('sidebar-toggle', handleToggle);
+    return () => window.removeEventListener('sidebar-toggle', handleToggle);
+  }, []);
+
   if (isCheckingAuth) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -51,7 +61,10 @@ export default function DashboardLayout({
       <Sidebar onAddExpense={() => setIsAddExpenseOpen(true)} />
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 p-8 relative">
+      <main className={cn(
+        "flex-1 p-8 relative transition-all duration-300",
+        isSidebarCollapsed ? "ml-20" : "ml-64"
+      )}>
         <div className="max-w-6xl mx-auto">{children}</div>
       </main>
 

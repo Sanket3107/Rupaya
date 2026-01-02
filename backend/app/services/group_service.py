@@ -145,9 +145,14 @@ class GroupService:
             group_data = membership.group.model_dump()
 
             # Calculate the user's personal balance in this group
-            group_data["user_balance"] = await self._calculate_user_balance(
+            metrics = await self._calculate_user_balance_metrics(
                 str(membership.group.id), user_id
             )
+            group_data.update({
+                "user_balance": metrics["balance"],
+                "total_owed": metrics["total_owed"],
+                "total_owe": metrics["total_owe"]
+            })
             groups.append(group_data)
 
         # 5. Return the PaginatedResponse structure
@@ -179,7 +184,12 @@ class GroupService:
 
         # Convert to dictionary to add dynamic fields
         group_data = group.model_dump()
-        group_data["user_balance"] = await self._calculate_user_balance(group_id, user_id)
+        metrics = await self._calculate_user_balance_metrics(group_id, user_id)
+        group_data.update({
+            "user_balance": metrics["balance"],
+            "total_owed": metrics["total_owed"],
+            "total_owe": metrics["total_owe"]
+        })
         group_data["total_spent"] = await self._calculate_total_spent(group_id)
 
         # Include nested relations as they might not be fully captured by basic model_dump depending on depth
@@ -188,7 +198,7 @@ class GroupService:
 
         return group_data
 
-    async def _calculate_user_balance(self, group_id: str, user_id: str) -> float:
+    async def _calculate_user_balance_metrics(self, group_id: str, user_id: str) -> dict:
         # 1. How much others owe you in this group (You paid, they haven't settled)
         owed_result = await prisma.billshare.group_by(
             by=["user_id"],
@@ -213,7 +223,11 @@ class GroupService:
         )
         total_owe = sum(item["_sum"]["amount"] or 0 for item in owe_result)
 
-        return total_owed - total_owe
+        return {
+            "balance": total_owed - total_owe,
+            "total_owed": total_owed,
+            "total_owe": total_owe
+        }
 
     async def _calculate_total_spent(self, group_id: str) -> float:
         result = await prisma.bill.group_by(

@@ -135,7 +135,7 @@ export function ExpenseList({
                       <p className="text-[10px] text-muted-foreground">
                         Paid by{" "}
                         <span className="font-semibold text-foreground/80">
-                          {isPayer ? "You" : bill.payer_name || "Unknown"}
+                          {isPayer ? "You" : (bill.payer?.name || bill.payer?.email || "Unknown")}
                         </span>{" "}
                         • {new Date(bill.created_at).toLocaleDateString()}
                       </p>
@@ -152,11 +152,17 @@ export function ExpenseList({
                         >
                           {isPayer ? (
                             <span className="flex items-center gap-1">
-                              <ArrowUpRight className="w-3 h-3" />
-                              Owed ₹
-                              {(
-                                bill.total_amount - myShare.amount
-                              ).toLocaleString()}
+                              {bill.total_amount - myShare.amount > 0 ? (
+                                <>
+                                  <ArrowUpRight className="w-3 h-3" />
+                                  You lent ₹{(bill.total_amount - myShare.amount).toLocaleString()}
+                                </>
+                              ) : (
+                                <>
+                                  <Receipt className="w-3 h-3 text-muted-foreground/50" />
+                                  You spent ₹{myShare.amount.toLocaleString()}
+                                </>
+                              )}
                             </span>
                           ) : (
                             <span className="flex items-center gap-1">
@@ -166,7 +172,7 @@ export function ExpenseList({
                           )}
                         </p>
                         <p className="text-[10px] text-muted-foreground uppercase font-medium">
-                          {myShare.is_paid ? "Settled" : "Pending"}
+                          {myShare.paid ? "Settled" : "Pending"}
                         </p>
                       </div>
                     )}

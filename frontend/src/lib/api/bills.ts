@@ -6,7 +6,7 @@ export interface BillShare {
   user_id: string;
   user_name: string;
   amount: number;
-  is_paid: boolean;
+  paid: boolean;
 }
 
 export interface Bill {
@@ -14,7 +14,11 @@ export interface Bill {
   description: string;
   total_amount: number;
   payer_id: string;
-  payer_name: string;
+  payer?: {
+    id: string;
+    name: string;
+    email: string;
+  };
   group_id: string;
   created_at: string;
   shares: BillShare[];
