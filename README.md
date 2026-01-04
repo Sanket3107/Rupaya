@@ -89,6 +89,8 @@ The application currently includes the following high-level endpoints:
 
 You can access the interactive API documentation at `http://127.0.0.1:8000/docs`.
 
+Added the Nextjs based frontend
+
 ## Testing
 
 The project is set up for testing using `pytest`. To run the tests:
