@@ -1,30 +1,40 @@
+from sqlalchemy import select, or_
+from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import (
     ConflictError,
     NotFoundError,
     ValidationError,
 )
 from app.core.security import hash_password, verify_password
-from app.db import prisma
+from app.db.models import User
 
 
 class UserService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
     async def register_user(self, name: str, email: str, password: str):
         if len(password) < 8:
             raise ValidationError("Password must be at least 8 characters")
 
-        existing = await prisma.user.find_unique(where={"email": email})
+        result = await self.db.execute(select(User).where(User.email == email))
+        existing = result.scalar_one_or_none()
         if existing:
             raise ConflictError("Email already registered")
 
         hashed_pw = hash_password(password)
-        user = await prisma.user.create(data={"name": name, "email": email, "password": hashed_pw})
-        return user
+        new_user = User(name=name, email=email, password=hashed_pw)
+        self.db.add(new_user)
+        await self.db.commit()
+        await self.db.refresh(new_user)
+        return new_user
 
     async def change_user_password(self, user_id: str, old_password: str, new_password: str):
         if len(new_password) < 8:
             raise ValidationError("New password must be at least 8 characters")
 
-        user = await prisma.user.find_unique(where={"id": user_id})
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
         if not user:
             raise NotFoundError("User not found")
 
@@ -32,26 +42,30 @@ class UserService:
             raise ValidationError("Old password incorrect")
 
         hashed_new = hash_password(new_password)
-        await prisma.user.update(where={"id": user_id}, data={"password": hashed_new})
+        user.password = hashed_new
+        await self.db.commit()
         return {"detail": "Password changed successfully"}
 
     async def get_user_by_id(self, user_id: str):
-        user = await prisma.user.find_unique(where={"id": user_id})
+        result = await self.db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
         if not user:
             raise NotFoundError("User not found")
         return user
 
     async def search_users(self, query: str, current_user_id: str):
         """Search users by name or email, excluding the current user."""
-        users = await prisma.user.find_many(
-            where={
-                "id": {"not": current_user_id},
-                "OR": [
-                    {"name": {"contains": query, "mode": "insensitive"}},
-                    {"email": {"contains": query, "mode": "insensitive"}},
-                ],
-            },
-            take=10,
+        stmt = (
+            select(User)
+            .where(
+                User.id != current_user_id,
+                or_(
+                    User.name.ilike(f"%{query}%"),
+                    User.email.ilike(f"%{query}%")
+                )
+            )
+            .limit(10)
         )
-        return users
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
 

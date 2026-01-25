@@ -5,6 +5,7 @@ from pydantic import BaseModel
 from app.models.users import UserOut
 
 
+
 class GroupCreate(BaseModel):
     name: str
     description: str | None = None
@@ -16,11 +17,13 @@ class GroupUpdate(BaseModel):
     description: str | None = None
 
 
+from uuid import UUID
+
 class GroupOut(BaseModel):
-    id: str
+    id: UUID
     name: str
     description: str | None
-    created_by: str | None
+    created_by: UUID | None
     created_at: datetime
     member_count: int = 0
     total_owed: float = 0
@@ -32,7 +35,7 @@ class GroupOut(BaseModel):
 
 
 class GroupMemberOut(BaseModel):
-    id: str
+    id: UUID
     user: UserOut
     role: str
     created_at: datetime

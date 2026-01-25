@@ -1,3 +1,1 @@
-from prisma import Prisma
-
-prisma = Prisma()
+from .session import get_db

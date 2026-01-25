@@ -1,17 +1,20 @@
 # app/services/summary_service.py
-
 from typing import Optional
 
-# from app.core.exceptions import ForbiddenError
-from app.db import prisma
+from sqlalchemy import select, func, and_
+from sqlalchemy.orm import selectinload
 
-# from app.models.users import UserOut
+from app.db.models import GroupMember, Bill, BillShare, User
 from app.services.group_service import GroupService
 
 
 class SummaryService:
     def __init__(self, group_service: GroupService):
         self.group_service = group_service
+
+    @property
+    def db(self):
+        return self.group_service.db
 
     async def get_user_summary(self, user_id: str, group_id: Optional[str] = None):
         """
@@ -26,67 +29,73 @@ class SummaryService:
         if group_id:
             group_count = 1
         else:
-            group_count = await prisma.groupmember.count(
-                where={"user_id": user_id, "deleted_at": None}
+            stmt = select(func.count(GroupMember.id)).where(
+                GroupMember.user_id == user_id,
+                GroupMember.deleted_at.is_(None)
             )
+            res = await self.db.execute(stmt)
+            group_count = res.scalar() or 0
 
         # 2. Total Owed (others owe you)
-        owed_filter = {
-            "bill": {
-                "deleted_at": None,
-                "paid_by": user_id,
-            },
-            "user_id": {"not": user_id},
-            "paid": False,
-        }
-
+        # Bill where paid_by = user_id, share where user_id != user_id, paid = False
+        stmt_owed = select(func.sum(BillShare.amount))\
+            .join(Bill, Bill.id == BillShare.bill_id)\
+            .where(
+                Bill.paid_by == user_id,
+                Bill.deleted_at.is_(None),
+                BillShare.user_id != user_id,
+                BillShare.paid == False
+            )
+        
         if group_id:
-            owed_filter["bill"]["group_id"] = group_id
-
-        owed_result = await prisma.billshare.group_by(
-            by=["user_id"], sum={"amount": True}, where=owed_filter
-        )
-        total_owed = sum(item["_sum"]["amount"] or 0 for item in owed_result)
+            stmt_owed = stmt_owed.where(Bill.group_id == group_id)
+            
+        res_owed = await self.db.execute(stmt_owed)
+        total_owed = res_owed.scalar() or 0
 
         # 3. Total Owe (you owe others)
-        owe_filter = {
-            "bill": {
-                "deleted_at": None,
-                "paid_by": {"not": user_id},
-            },
-            "user_id": user_id,
-            "paid": False,
-        }
-
+        # Bill where paid_by != user_id, share where user_id = user_id, paid = False
+        stmt_owe = select(func.sum(BillShare.amount))\
+            .join(Bill, Bill.id == BillShare.bill_id)\
+            .where(
+                Bill.paid_by != user_id,
+                Bill.deleted_at.is_(None),
+                BillShare.user_id == user_id,
+                BillShare.paid == False
+            )
+        
         if group_id:
-            owe_filter["bill"]["group_id"] = group_id
-
-        owe_result = await prisma.billshare.group_by(
-            by=["user_id"], sum={"amount": True}, where=owe_filter
-        )
-        total_owe = sum(item["_sum"]["amount"] or 0 for item in owe_result)
+            stmt_owe = stmt_owe.where(Bill.group_id == group_id)
+            
+        res_owe = await self.db.execute(stmt_owe)
+        total_owe = res_owe.scalar() or 0
 
         # 4. Friends (people you share groups with) - only for global summary
         friends_map = {}
 
         if not group_id:
-            group_members = await prisma.groupmember.find_many(
-                where={
-                    "group": {"members": {"some": {"user_id": user_id}}},
-                    "user_id": {"not": user_id},
-                    "deleted_at": None,
-                },
-                include={"user": True},
-                take=10,
-            )
+            # Subquery for my groups
+            my_groups_sub = select(GroupMember.group_id).where(
+                GroupMember.user_id == user_id,
+                GroupMember.deleted_at.is_(None)
+            ).scalar_subquery()
+            
+            # Find members of these groups excluding self
+            stmt_friends = select(User).join(GroupMember, User.id == GroupMember.user_id).where(
+                GroupMember.group_id.in_(my_groups_sub),
+                GroupMember.user_id != user_id,
+                GroupMember.deleted_at.is_(None)
+            ).distinct().limit(10)
+            
+            res_friends = await self.db.execute(stmt_friends)
+            friends = res_friends.scalars().all()
 
-            for gm in group_members:
-                if gm.user_id not in friends_map:
-                    friends_map[gm.user_id] = {
-                        "id": gm.user_id,
-                        "name": gm.user.name,
-                        "email": gm.user.email,
-                    }
+            for friend in friends:
+                friends_map[str(friend.id)] = {
+                    "id": str(friend.id),
+                    "name": friend.name,
+                    "email": friend.email,
+                }
 
         return {
             "total_owed": total_owed,

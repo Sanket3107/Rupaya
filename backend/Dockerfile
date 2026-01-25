@@ -24,8 +24,7 @@ RUN uv sync --frozen --no-cache
 # Copy the rest of the application
 COPY . .
 
-# Generate Prisma client
-RUN uv run prisma generate
+
 
 # Expose port
 EXPOSE 8000

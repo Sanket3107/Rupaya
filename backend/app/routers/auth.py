@@ -5,13 +5,14 @@ from app.core.security import oauth2_scheme
 from app.models.auth import RefreshTokenRequest
 from app.services.auth_service import AuthService
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
+
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-auth_service = AuthService()
 
-
-def get_auth_service() -> AuthService:
-    return auth_service
+def get_auth_service(db: AsyncSession = Depends(get_db)) -> AuthService:
+    return AuthService(db)
 
 
 @router.post("/login")

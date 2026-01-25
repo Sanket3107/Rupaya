@@ -20,8 +20,10 @@ class UserLogin(BaseModel):
     password: str
 
 
+from uuid import UUID
+
 class UserOut(BaseModel):
-    id: str
+    id: UUID
     name: str
     email: str
     role: Role

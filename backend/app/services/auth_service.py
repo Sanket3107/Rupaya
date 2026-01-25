@@ -2,15 +2,21 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi import Depends
 from jose import JWTError, jwt
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.exceptions import NotFoundError, UnauthorizedError, ValidationError
 from app.core.redis import redis_client
 from app.core.security import encode_token, oauth2_scheme, verify_password
-from app.db import prisma
+from app.db.session import get_db
+from app.db.models import User
 
 
 class AuthService:
+    def __init__(self, db: AsyncSession):
+        self.db = db
+
     def _create_token(
         self, data: dict, expires_delta: timedelta | None = None, token_type: str = "access"
     ):
@@ -34,12 +40,14 @@ class AuthService:
         return encode_token(to_encode)
 
     async def login_user(self, email: str, password: str):
-        user = await prisma.user.find_unique(where={"email": email})
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        
         if not user or not verify_password(password, user.password):
             raise UnauthorizedError("Invalid email or password")
 
-        access_token = self._create_token({"sub": user.id}, token_type="access")
-        refresh_token = self._create_token({"sub": user.id}, token_type="refresh")
+        access_token = self._create_token({"sub": str(user.id)}, token_type="access")
+        refresh_token = self._create_token({"sub": str(user.id)}, token_type="refresh")
 
         return {
             "access_token": access_token,
@@ -61,7 +69,8 @@ class AuthService:
             raise ValidationError("Invalid token") from err
 
     async def logout_all_sessions(self, token: str):
-        user = await get_current_user(token)
+        # We need to manually call get_current_user logic or pass db
+        user = await get_current_user(token, self.db)
 
         # Blacklist current token too
         try:
@@ -101,18 +110,20 @@ class AuthService:
             if revoke_ts and payload.get("iat", 0) < int(revoke_ts):
                 raise UnauthorizedError("All sessions revoked. Please log in again.")
 
-            user = await prisma.user.find_unique(where={"id": user_id})
+            result = await self.db.execute(select(User).where(User.id == user_id))
+            user = result.scalar_one_or_none()
+            
             if not user:
                 raise UnauthorizedError("User no longer exists")
 
 
-            new_access = self._create_token({"sub": user_id}, token_type="access")
+            new_access = self._create_token({"sub": str(user_id)}, token_type="access")
             return {"access_token": new_access, "token_type": "bearer"}
         except JWTError as err:
             raise UnauthorizedError("Invalid or expired refresh token") from err
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     if await redis_client.exists(f"blacklist:{token}"):
         raise UnauthorizedError("Token invalidated. Please log in again.")
 
@@ -130,7 +141,9 @@ async def get_current_user(token: str = Depends(oauth2_scheme)):
         if revoke_ts and payload.get("iat", 0) < int(revoke_ts):
             raise UnauthorizedError("Session revoked. Please log in again.")
 
-        user = await prisma.user.find_unique(where={"id": user_id})
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalar_one_or_none()
+        
         if not user:
             raise UnauthorizedError("User session is no longer valid")
         return user

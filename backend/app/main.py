@@ -11,7 +11,7 @@ from app.core.exceptions import (
     UnauthorizedError,
     ValidationError,
 )
-from app.db import prisma
+
 from app.routers import auth, bills, groups, users, summary
 
 app = FastAPI(title="Rupaya API", openapi_url=f"{settings.api_base_path}/openapi.json")
@@ -26,14 +26,6 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-async def startup():
-    await prisma.connect()
-
-
-@app.on_event("shutdown")
-async def shutdown():
-    await prisma.disconnect()
 
 
 @app.exception_handler(RupayaException)

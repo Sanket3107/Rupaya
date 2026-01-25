@@ -5,14 +5,14 @@ from app.models.users import UserCreate, UserOut
 from app.services.auth_service import get_current_user
 from app.services.user_service import UserService
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
+
 router = APIRouter(prefix="/users", tags=["Users"])
 
 
-user_service = UserService()
-
-
-def get_user_service() -> UserService:
-    return user_service
+def get_user_service(db: AsyncSession = Depends(get_db)) -> UserService:
+    return UserService(db)
 
 
 @router.post("/register", response_model=UserOut)

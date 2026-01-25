@@ -12,32 +12,32 @@ The easiest way to get started is using Docker Compose, which sets up PostgreSQL
 
 2.  **Start the services**:
     ```bash
-    docker-compose -f docker-compose-dev.yml up -d
+    docker-compose up -d
     ```
 
 3.  **Verify services are running**:
     ```bash
-    docker-compose -f docker-compose-dev.yml ps
+    docker-compose ps
     ```
 
 4.  **View logs** (optional):
     ```bash
-    docker-compose -f docker-compose-dev.yml logs -f
+    docker-compose logs -f
     ```
 
 5.  **Stop the services**:
     ```bash
-    docker-compose -f docker-compose-dev.yml down
+    docker-compose down
     ```
 
 6.  **Stop and remove volumes** (⚠️ deletes all data):
     ```bash
-    docker-compose -f docker-compose-dev.yml down -v
+    docker-compose down -v
     ```
 
 ### Docker Services
 
-The `docker-compose-dev.yml` includes:
+The `docker-compose.yml` includes:
 
 - **PostgreSQL 16** (Alpine)
   - Port: `5432`
@@ -88,17 +88,18 @@ REDIS_URL="redis://localhost:6379"
     uv sync
     ```
 
-2.  **Start the Server**:
+2.  **Apply Migrations**:
+    ```bash
+    uv run alembic upgrade head
+    ```
+
+3.  **Start the Server**:
     ```bash
     uv run start.py
     ```
     This will start the server on the port specified in your `.env` file.
 
     Alternative methods:
-    ```bash
-    uv run fastapi dev app/main.py
-    ```
-    Or using uvicorn directly:
     ```bash
     uv run uvicorn app.main:app --reload --port 8000
     ```

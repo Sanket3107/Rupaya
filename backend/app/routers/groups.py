@@ -17,13 +17,14 @@ from app.models.users import UserOut
 from app.services.auth_service import get_current_user
 from app.services.group_service import GroupService
 
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.db.session import get_db
+
 router = APIRouter(prefix="/groups", tags=["Groups"])
 
-group_service = GroupService()
 
-
-def get_group_service() -> GroupService:
-    return group_service
+def get_group_service(db: AsyncSession = Depends(get_db)) -> GroupService:
+    return GroupService(db)
 
 
 @router.post("/", response_model=GroupOut)
