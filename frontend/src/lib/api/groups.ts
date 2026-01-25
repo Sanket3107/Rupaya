@@ -69,4 +69,9 @@ export const GroupsAPI = {
   removeMember(groupId: string, memberId: string) {
     return api.delete(`/groups/${groupId}/members/${memberId}`);
   },
+
+  delete(id: string) {
+    return api.delete(`/groups/${id}`);
+  },
 };
+

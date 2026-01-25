@@ -268,3 +268,42 @@ class GroupService:
                 "deleted_by": removed_by_id,
             },
         )
+
+    async def delete_group(self, group_id: str, user_id: str):
+        """
+        Soft delete a group and all its memberships.
+        Requires admin privileges.
+        """
+        await self.check_is_admin(user_id, group_id)
+
+        now = datetime.utcnow()
+
+        # Update the group to mark as deleted
+        await prisma.group.update(
+            where={"id": group_id},
+            data={
+                "deleted_at": now,
+                "deleted_by": user_id,
+            }
+        )
+
+        # Soft delete all memberships
+        await prisma.groupmember.update_many(
+            where={"group_id": group_id, "deleted_at": None},
+            data={
+                "deleted_at": now,
+                "deleted_by": user_id,
+            }
+        )
+
+        # Soft delete all bills and shares
+        await prisma.bill.update_many(
+            where={"group_id": group_id, "deleted_at": None},
+            data={
+                "deleted_at": now,
+                "deleted_by": user_id,
+            }
+        )
+
+        return {"message": "Group deleted successfully"}
+

@@ -13,6 +13,9 @@ import { MemberList } from "@/components/groups/MemberList";
 import { ExpenseList } from "@/components/groups/ExpenseList";
 import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
 import { InviteMemberModal } from "@/components/groups/InviteMemberModal";
+import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+import { useRouter } from "next/navigation";
+
 
 interface Member {
   id: string;
@@ -39,6 +42,7 @@ interface GroupSummary {
 
 export default function GroupDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string;
 
   const [group, setGroup] = useState<GroupDetail | null>(null);
@@ -49,7 +53,30 @@ export default function GroupDetailPage() {
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [billToEdit, setBillToEdit] = useState<Bill | null>(null);
+
+  const isAdmin = React.useMemo(() => {
+    if (!group || !currentUser) return false;
+    const membership = group.members.find(m => m.user.id === currentUser.id);
+    return membership?.role === "ADMIN";
+  }, [group, currentUser]);
+
+  const handleDeleteGroup = async () => {
+    setIsDeleting(true);
+    try {
+      await GroupsAPI.delete(id);
+      router.push("/groups");
+      window.dispatchEvent(new Event("refresh-summary"));
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "Failed to delete group");
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
 
   const fetchGroupDetail = React.useCallback(async () => {
     try {
@@ -223,12 +250,24 @@ export default function GroupDetailPage() {
               >
                 <Settings className="w-4 h-4 mr-3" /> Group Settings
               </Button>
+
               <Button
                 variant="ghost"
                 className="w-full justify-start text-sm h-10 rounded-xl text-rose-500 hover:bg-rose-500/5 hover:text-rose-600"
               >
                 <Trash2 className="w-4 h-4 mr-3" /> Leave Group
               </Button>
+
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  className="w-full justify-start text-sm h-10 rounded-xl text-rose-500 hover:bg-rose-500/5 hover:text-rose-600"
+                  onClick={() => setIsDeleteModalOpen(true)}
+                >
+                  <Trash2 className="w-4 h-4 mr-3" /> Delete Group
+                </Button>
+              )}
+
             </div>
           </div>
         </div>
@@ -273,6 +312,18 @@ export default function GroupDetailPage() {
         groupId={id}
         onSuccess={fetchGroupDetail}
       />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={handleDeleteGroup}
+        title="Delete Group"
+        description={`Are you sure you want to delete "${group.name}"? This action cannot be undone and all expenses associated with this group will be lost.`}
+        confirmText="Delete Group"
+        variant="destructive"
+        isLoading={isDeleting}
+      />
     </div>
+
   );
 }

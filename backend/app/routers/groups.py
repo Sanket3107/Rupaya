@@ -90,3 +90,13 @@ async def remove_member(
     service: GroupService = Depends(get_group_service),
 ):
     return await service.remove_member_from_group(str(group_id), str(member_id), current_user.id)
+
+
+@router.delete("/{group_id}")
+async def delete_group(
+    group_id: UUID,
+    current_user: UserOut = Depends(get_current_user),
+    service: GroupService = Depends(get_group_service),
+):
+    return await service.delete_group(str(group_id), current_user.id)
+
