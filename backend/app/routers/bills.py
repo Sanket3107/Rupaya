@@ -57,7 +57,7 @@ async def get_group_bills(
     """
     Get bills for a specific group with pagination and search.
     """
-    return await service.get_group_bills(current_user.id, str(group_id), skip, limit, search)
+    return await service.get_group_bills(current_user.id, group_id, skip, limit, search)
 
 
 @router.get("/{bill_id}", response_model=BillResponse)
@@ -69,7 +69,7 @@ async def get_bill(
     """
     Get details of a specific bill.
     """
-    return await service.get_bill_details(current_user.id, str(bill_id))
+    return await service.get_bill_details(current_user.id, bill_id)
 
 
 @router.patch("/{bill_id}", response_model=BillResponse)
@@ -83,7 +83,7 @@ async def update_bill(
     Update a bill's details.
     Anyone in the group can update the bill.
     """
-    return await service.update_bill(current_user.id, str(bill_id), data)
+    return await service.update_bill(current_user.id, bill_id, data)
 
 
 
@@ -97,7 +97,7 @@ async def mark_share_as_paid(
     Mark a bill share as paid.
     Only the user who owes the share can mark it as paid.
     """
-    return await service.mark_share_as_paid(current_user.id, str(share_id))
+    return await service.mark_share_as_paid(current_user.id, share_id)
 
 
 @router.patch("/shares/{share_id}/mark-unpaid", response_model=BillShareResponse)
@@ -110,4 +110,4 @@ async def mark_share_as_unpaid(
     Mark a bill share as unpaid (undo payment).
     Only the user who owes the share can mark it as unpaid.
     """
-    return await service.mark_share_as_unpaid(current_user.id, str(share_id))
+    return await service.mark_share_as_unpaid(current_user.id, share_id)

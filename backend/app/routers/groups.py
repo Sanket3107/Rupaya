@@ -73,7 +73,7 @@ async def get_group(
     """
     Get group details (members only).
     """
-    return await service.get_group_detail(str(group_id), current_user.id)
+    return await service.get_group_detail(group_id, current_user.id)
 
 
 @router.post("/{group_id}/members", response_model=GroupMemberOut)
@@ -83,7 +83,7 @@ async def add_member(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.add_member_to_group(str(group_id), data, current_user.id)
+    return await service.add_member_to_group(group_id, data, current_user.id)
 
 
 @router.delete("/{group_id}/members/{member_id}")
@@ -93,7 +93,7 @@ async def remove_member(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.remove_member_from_group(str(group_id), str(member_id), current_user.id)
+    return await service.remove_member_from_group(group_id, member_id, current_user.id)
 
 
 @router.patch("/{group_id}", response_model=GroupOut)
@@ -103,7 +103,7 @@ async def update_group(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.update_group(str(group_id), data, current_user.id)
+    return await service.update_group(group_id, data, current_user.id)
 
 
 @router.patch("/{group_id}/members/{member_id}", response_model=GroupMemberOut)
@@ -114,7 +114,7 @@ async def update_member_role(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.update_member_role(str(group_id), str(member_id), data.role, current_user.id)
+    return await service.update_member_role(group_id, member_id, data.role, current_user.id)
 
 
 
@@ -124,5 +124,5 @@ async def delete_group(
     current_user: UserOut = Depends(get_current_user),
     service: GroupService = Depends(get_group_service),
 ):
-    return await service.delete_group(str(group_id), current_user.id)
+    return await service.delete_group(group_id, current_user.id)
 

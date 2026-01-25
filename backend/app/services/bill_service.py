@@ -25,7 +25,7 @@ class BillService:
     def db(self):
         return self.group_service.db
 
-    async def create_bill(self, user_id: str, data: BillCreate):
+    async def create_bill(self, user_id: UUID | str, data: BillCreate):
         """
         Create a new bill and its associated shares.
         """
@@ -71,7 +71,7 @@ class BillService:
         return await self.get_bill_details(user_id, str(bill.id))
 
 
-    async def update_bill(self, user_id: str, bill_id: str, data: BillUpdate):
+    async def update_bill(self, user_id: UUID | str, bill_id: UUID | str, data: BillUpdate):
         """
         Update a bill's details.
         Also handles recalculating or replacing shares.
@@ -220,7 +220,7 @@ class BillService:
 
 
     async def get_group_bills(
-        self, user_id: str, group_id: str, skip: int = 0, limit: int = 20, search: str = None
+        self, user_id: UUID | str, group_id: UUID | str, skip: int = 0, limit: int = 20, search: str = None
     ):
         """
         Retrieve bills for a specific group with pagination and optional search.
@@ -260,7 +260,7 @@ class BillService:
             "has_more": skip + len(bills) < total,
         }
 
-    async def get_user_bills(self, user_id: str, skip: int = 0, limit: int = 20):
+    async def get_user_bills(self, user_id: UUID | str, skip: int = 0, limit: int = 20):
         """
         Retrieve all bills where the user is involved (payer or debtor).
         """
@@ -293,7 +293,7 @@ class BillService:
             "has_more": skip + len(bills) < total,
         }
 
-    async def get_bill_details(self, user_id: str, bill_id: str):
+    async def get_bill_details(self, user_id: UUID | str, bill_id: UUID | str):
         """
         Get details of a specific bill.
         """

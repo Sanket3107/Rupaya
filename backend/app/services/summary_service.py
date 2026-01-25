@@ -1,5 +1,6 @@
 # app/services/summary_service.py
 from typing import Optional
+from uuid import UUID
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.orm import selectinload
@@ -16,7 +17,12 @@ class SummaryService:
     def db(self):
         return self.group_service.db
 
-    async def get_user_summary(self, user_id: str, group_id: Optional[str] = None):
+    async def get_user_summary(self, user_id: UUID | str, group_id: Optional[UUID | str] = None):
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        if isinstance(group_id, str):
+            group_id = UUID(group_id)
+            
         """
         Returns summary metrics for a user.
         If group_id is provided, returns summary limited to that group.

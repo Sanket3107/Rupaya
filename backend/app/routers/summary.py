@@ -30,5 +30,4 @@ async def get_user_summary(
     - **Global summary**: Leave group_id empty to get metrics across all groups
     - **Group summary**: Provide group_id to get metrics for a specific group only
     """
-    group_id_str = str(group_id) if group_id else None
-    return await service.get_user_summary(current_user.id, group_id_str)
+    return await service.get_user_summary(current_user.id, group_id)

@@ -1,5 +1,6 @@
 # app/services/group_service.py
 from datetime import datetime
+from uuid import UUID
 
 from sqlalchemy import select, or_, and_, func
 from sqlalchemy.orm import selectinload
@@ -16,7 +17,12 @@ class GroupService:
         self.db = db
 
     # auth helper
-    async def check_is_member(self, user_id: str, group_id: str):
+    async def check_is_member(self, user_id: UUID | str, group_id: UUID | str):
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+        if isinstance(group_id, str):
+            group_id = UUID(group_id)
+            
         """
         Verify if a user is an active member of a group.
         Raises 403 if not a member.
@@ -34,7 +40,7 @@ class GroupService:
             raise ForbiddenError("User is not a member of this group")
         return member
 
-    async def check_is_admin(self, user_id: str, group_id: str):
+    async def check_is_admin(self, user_id: UUID | str, group_id: UUID | str):
         member = await self.check_is_member(user_id, group_id)
         if member.role != GroupRole.ADMIN:
             raise ForbiddenError("Only group admins can perform this action")
@@ -90,12 +96,14 @@ class GroupService:
     # READ OPERATIONS
     # -------------------------
     async def get_user_groups(
-        self, user_id: str, search: str | None = None, 
+        self, user_id: UUID | str, search: str | None = None, 
         filter: str | None = None,
         sort_by: str = "created_at", order: str = "desc",
         skip: int = 0, limit: int = 20
     ):
-        
+        if isinstance(user_id, str):
+            user_id = UUID(user_id)
+            
         # 1. Get all memberships for the user
         stmt = select(GroupMember).options(
             selectinload(GroupMember.group).selectinload(Group.members)
@@ -122,13 +130,11 @@ class GroupService:
             if not group: 
                 continue # Should not happen due to join but safety
             
-            group_id = str(group.id)
-            
             # Sub-query for Owed (others owe user in this group)
             owed_stmt = select(func.sum(BillShare.amount))\
                 .join(Bill, Bill.id == BillShare.bill_id)\
                 .where(
-                    Bill.group_id == group_id,
+                    Bill.group_id == group.id,
                     Bill.paid_by == user_id,
                     Bill.deleted_at.is_(None),
                     BillShare.user_id != user_id,
@@ -141,7 +147,7 @@ class GroupService:
             owe_stmt = select(func.sum(BillShare.amount))\
                 .join(Bill, Bill.id == BillShare.bill_id)\
                 .where(
-                    Bill.group_id == group_id,
+                    Bill.group_id == group.id,
                     Bill.paid_by != user_id,
                     Bill.deleted_at.is_(None),
                     BillShare.user_id == user_id,
@@ -151,9 +157,11 @@ class GroupService:
             total_owe = owe_res.scalar() or 0
 
             # --- FILTERING LOGIC ---
-            if filter == "owe" and total_owe <= 0:
+            # "owe" shows groups where you net owe money (Owe > Owed)
+            if filter == "owe" and total_owe <= total_owed:
                 continue
-            if filter == "owed" and total_owed <= 0:
+            # "owed" shows groups where you are net owed money (Owed > Owe)
+            if filter == "owed" and total_owed <= total_owe:
                 continue
 
             active_members = [mem for mem in group.members if mem.deleted_at is None]
@@ -177,9 +185,11 @@ class GroupService:
         if sort_by == "name":
             groups_list.sort(key=lambda x: x["name"].lower(), reverse=reverse)
         elif sort_by == "owed":
-            groups_list.sort(key=lambda x: x["total_owed"], reverse=reverse)
+            # Sort by net amount others owe you
+            groups_list.sort(key=lambda x: x["total_owed"] - x["total_owe"], reverse=reverse)
         elif sort_by == "owe":
-            groups_list.sort(key=lambda x: x["total_owe"], reverse=reverse)
+            # Sort by net amount you owe others
+            groups_list.sort(key=lambda x: x["total_owe"] - x["total_owed"], reverse=reverse)
         else: # default: created_at
             groups_list.sort(key=lambda x: x["created_at"], reverse=reverse)
 
@@ -195,7 +205,7 @@ class GroupService:
             "has_more": (skip + limit) < total,
         }
 
-    async def get_group_detail(self, group_id: str, user_id: str):
+    async def get_group_detail(self, group_id: UUID | str, user_id: UUID | str):
         await self.check_is_member(user_id, group_id)
 
         stmt = select(Group).options(
@@ -229,6 +239,33 @@ class GroupService:
                 created_at=m.created_at
             ))
 
+        # Calculate summary metrics for this group
+        # Owed (others owe user in this group)
+        owed_stmt = select(func.sum(BillShare.amount))\
+            .join(Bill, Bill.id == BillShare.bill_id)\
+            .where(
+                Bill.group_id == group.id,
+                Bill.paid_by == user_id,
+                Bill.deleted_at.is_(None),
+                BillShare.user_id != user_id,
+                BillShare.paid == False
+            )
+        owed_res = await self.db.execute(owed_stmt)
+        total_owed = owed_res.scalar() or 0
+
+        # Owe (user owes others in this group)
+        owe_stmt = select(func.sum(BillShare.amount))\
+            .join(Bill, Bill.id == BillShare.bill_id)\
+            .where(
+                Bill.group_id == group.id,
+                Bill.paid_by != user_id,
+                Bill.deleted_at.is_(None),
+                BillShare.user_id == user_id,
+                BillShare.paid == False
+            )
+        owe_res = await self.db.execute(owe_stmt)
+        total_owe = owe_res.scalar() or 0
+
         return GroupDetailOut(
             id=group.id,
             name=group.name,
@@ -238,8 +275,8 @@ class GroupService:
             updated_at=group.updated_at,
             members=members_out,
             member_count=len(members_out),
-            total_owed=0, # Metrics not calculated in detail view for now
-            total_owe=0
+            total_owed=total_owed,
+            total_owe=total_owe
         )
 
     # -------------------------
@@ -247,9 +284,9 @@ class GroupService:
     # -------------------------
     async def add_member_to_group(
         self,
-        group_id: str,
+        group_id: UUID | str,
         data: AddMemberRequest,
-        added_by_id: str,
+        added_by_id: UUID | str,
     ):
         await self.check_is_admin(added_by_id, group_id)
 
