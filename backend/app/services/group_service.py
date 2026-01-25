@@ -3,7 +3,8 @@ from datetime import datetime
 
 from app.core.exceptions import ForbiddenError, NotFoundError, ValidationError
 from app.db import prisma
-from app.models.groups import AddMemberRequest, GroupCreate
+from app.models.groups import AddMemberRequest, GroupCreate, GroupUpdate
+
 
 
 class GroupService:
@@ -306,4 +307,48 @@ class GroupService:
         )
 
         return {"message": "Group deleted successfully"}
+
+    async def update_group(self, group_id: str, data: GroupUpdate, user_id: str):
+        """
+        Update group details. Everyone in the group can currently do this.
+        """
+        await self.check_is_member(user_id, group_id)
+        
+        update_data = {}
+        if data.name is not None:
+            update_data["name"] = data.name
+        if data.description is not None:
+            update_data["description"] = data.description
+            
+        update_data["updated_at"] = datetime.utcnow()
+        update_data["updated_by"] = user_id
+
+        return await prisma.group.update(
+            where={"id": group_id},
+            data=update_data
+        )
+
+    async def update_member_role(self, group_id: str, member_id: str, role: str, user_id: str):
+        """
+        Change a member's role. Requires admin privileges.
+        """
+        await self.check_is_admin(user_id, group_id)
+        
+        # Check if member exists in this group
+        member = await prisma.groupmember.find_first(
+            where={"id": member_id, "group_id": group_id}
+        )
+        if not member:
+            raise NotFoundError("Member not found in this group")
+            
+        return await prisma.groupmember.update(
+            where={"id": member_id},
+            data={
+                "role": role,
+                "updated_at": datetime.utcnow(),
+                "updated_by": user_id
+            },
+            include={"user": True}
+        )
+
 

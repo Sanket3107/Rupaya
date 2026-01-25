@@ -48,3 +48,8 @@ class GroupDetailOut(GroupOut):
 class AddMemberRequest(BaseModel):
     email: str
     role: str = "MEMBER"
+
+
+class MemberUpdate(BaseModel):
+    role: str
+

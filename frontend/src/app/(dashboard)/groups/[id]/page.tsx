@@ -13,7 +13,9 @@ import { MemberList } from "@/components/groups/MemberList";
 import { ExpenseList } from "@/components/groups/ExpenseList";
 import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
 import { InviteMemberModal } from "@/components/groups/InviteMemberModal";
+import { GroupSettingsModal } from "@/components/groups/GroupSettingsModal";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
+
 import { useRouter } from "next/navigation";
 
 
@@ -56,6 +58,12 @@ export default function GroupDetailPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [billToEdit, setBillToEdit] = useState<Bill | null>(null);
+
+  const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
+  const [isRemovingMember, setIsRemovingMember] = useState(false);
+
+
+
 
   const isAdmin = React.useMemo(() => {
     if (!group || !currentUser) return false;
@@ -143,16 +151,25 @@ export default function GroupDetailPage() {
     setIsAddExpenseOpen(true);
   };
 
-  const removeMember = async (memberId: string) => {
-    if (!confirm("Are you sure you want to remove this member?")) return;
+  const removeMember = (memberId: string) => {
+    setMemberToRemove(memberId);
+  };
+
+  const confirmRemoveMember = async () => {
+    if (!memberToRemove) return;
+    setIsRemovingMember(true);
     try {
-      await GroupsAPI.removeMember(id, memberId);
+      await GroupsAPI.removeMember(id, memberToRemove);
       fetchGroupDetail();
       window.dispatchEvent(new Event("refresh-summary"));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Failed to remove member");
+    } finally {
+      setIsRemovingMember(false);
+      setMemberToRemove(null);
     }
   };
+
 
   if (loading) {
     return (
@@ -247,9 +264,12 @@ export default function GroupDetailPage() {
               <Button
                 variant="ghost"
                 className="w-full justify-start text-sm h-10 rounded-xl"
+                onClick={() => router.push(`/groups/${id}/settings`)}
               >
                 <Settings className="w-4 h-4 mr-3" /> Group Settings
               </Button>
+
+
 
               <Button
                 variant="ghost"
@@ -313,6 +333,19 @@ export default function GroupDetailPage() {
         onSuccess={fetchGroupDetail}
       />
 
+
+
+      <ConfirmationModal
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={confirmRemoveMember}
+        title="Remove Member"
+        description="Are you sure you want to remove this member from the group?"
+        confirmText="Remove Member"
+        variant="destructive"
+        isLoading={isRemovingMember}
+      />
+
       <ConfirmationModal
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
@@ -323,6 +356,7 @@ export default function GroupDetailPage() {
         variant="destructive"
         isLoading={isDeleting}
       />
+
     </div>
 
   );

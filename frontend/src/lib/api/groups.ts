@@ -34,7 +34,9 @@ export interface GroupCreate {
 export interface AddMemberRequest {
   user_id?: string;
   email?: string;
+  role?: string;
 }
+
 
 export const GroupsAPI = {
   create(data: GroupCreate) {
@@ -62,7 +64,16 @@ export const GroupsAPI = {
     return api.get<GroupDetail>(`/groups/${id}`);
   },
 
+  update(id: string, data: { name?: string; description?: string }) {
+    return api.patch<Group>(`/groups/${id}`, data);
+  },
+
+  updateMemberRole(groupId: string, memberId: string, role: string) {
+    return api.patch<GroupMember>(`/groups/${groupId}/members/${memberId}`, { role });
+  },
+
   addMember(groupId: string, data: AddMemberRequest) {
+
     return api.post<GroupMember>(`/groups/${groupId}/members`, data);
   },
 

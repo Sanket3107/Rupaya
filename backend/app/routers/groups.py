@@ -8,7 +8,10 @@ from app.models.groups import (
     GroupDetailOut,
     GroupMemberOut,
     GroupOut,
+    GroupUpdate,
+    MemberUpdate,
 )
+
 from app.models.pagination import PaginatedResponse
 from app.models.users import UserOut
 from app.services.auth_service import get_current_user
@@ -90,6 +93,28 @@ async def remove_member(
     service: GroupService = Depends(get_group_service),
 ):
     return await service.remove_member_from_group(str(group_id), str(member_id), current_user.id)
+
+
+@router.patch("/{group_id}", response_model=GroupOut)
+async def update_group(
+    group_id: UUID,
+    data: GroupUpdate,
+    current_user: UserOut = Depends(get_current_user),
+    service: GroupService = Depends(get_group_service),
+):
+    return await service.update_group(str(group_id), data, current_user.id)
+
+
+@router.patch("/{group_id}/members/{member_id}", response_model=GroupMemberOut)
+async def update_member_role(
+    group_id: UUID,
+    member_id: UUID,
+    data: MemberUpdate,
+    current_user: UserOut = Depends(get_current_user),
+    service: GroupService = Depends(get_group_service),
+):
+    return await service.update_member_role(str(group_id), str(member_id), data.role, current_user.id)
+
 
 
 @router.delete("/{group_id}")
