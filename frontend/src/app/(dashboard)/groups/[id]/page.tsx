@@ -13,7 +13,6 @@ import { MemberList } from "@/components/groups/MemberList";
 import { ExpenseList } from "@/components/groups/ExpenseList";
 import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
 import { InviteMemberModal } from "@/components/groups/InviteMemberModal";
-import { GroupSettingsModal } from "@/components/groups/GroupSettingsModal";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
 import { useRouter } from "next/navigation";
