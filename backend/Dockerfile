@@ -30,4 +30,4 @@ COPY . .
 EXPOSE 8000
 
 # Command to run the application with hot-reloading
-CMD ["uv", "run", "python", "start.py"]
+CMD sh -c "uv run alembic upgrade head && uv run python start.py"
