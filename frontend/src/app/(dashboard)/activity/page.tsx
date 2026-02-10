@@ -12,6 +12,7 @@ import { BillsAPI, type Bill } from "@/lib/api";
 import { useInfiniteScroll } from "@/hooks/useInfiniteScroll";
 import { UsersAPI } from "@/lib/api/users";
 import { motion } from "framer-motion";
+import { BillCard } from "@/components/bills/BillCard";
 
 export default function ActivityPage() {
     const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
@@ -70,109 +71,14 @@ export default function ActivityPage() {
 
             {/* Activity Feed */}
             <div className="space-y-4">
-                {bills.map((item) => {
-                    const myShare = item.shares.find(
-                        (s) => s.user_id === currentUser?.id
-                    );
-                    const isPayer = item.paid_by === currentUser?.id;
-
-                    // Don't show bills where user has no relationship
-                    if (!isPayer && !myShare) return null;
-
-                    return (
-                        <div
-                            key={item.id}
-                            className="bg-card border border-border rounded-3xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:border-primary/40 transition-all hover:translate-x-1 group"
-                        >
-                            <div className="flex items-center gap-5">
-                                <div className="w-14 h-14 bg-secondary/50 rounded-2xl flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white transition-colors">
-                                    <Receipt className="w-7 h-7" />
-                                </div>
-                                <div>
-                                    <h4 className="font-bold text-lg tracking-tight mb-1">
-                                        {item.description}
-                                    </h4>
-                                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                                        <span className="bg-primary/5 text-primary px-2 py-0.5 rounded-md font-bold uppercase tracking-tighter">{item.group?.name}</span>
-                                        <span>•</span>
-                                        <span>
-                                            Paid by{" "}
-                                            <span className="font-semibold text-foreground/80">
-                                                {isPayer ? "You" : (item.payer?.name || item.payer?.email || "Unknown")}
-                                            </span>
-                                        </span>
-                                        <span>•</span>
-                                        <span>{new Date(item.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="flex items-center justify-between sm:justify-end gap-10 border-t sm:border-t-0 pt-4 sm:pt-0 border-border/50">
-                                <div className="text-right">
-                                    {isPayer ? (
-                                        // User is the payer
-                                        myShare ? (
-                                            // Payer has a share
-                                            item.total_amount - myShare.amount > 0 ? (
-                                                <>
-                                                    <div className="text-sm font-black flex items-center gap-1 justify-end text-emerald-500">
-                                                        <ArrowUpRight className="w-4 h-4" />
-                                                        Lent ₹{(item.total_amount - myShare.amount).toLocaleString()}
-                                                    </div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
-                                                        {/* Check if all OTHER shares are paid */}
-                                                        {item.shares.filter(s => s.user_id !== currentUser?.id).every(s => s.paid) ? "Settled" : "Pending"}
-                                                    </p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="text-sm font-black flex items-center gap-1 justify-end text-muted-foreground">
-                                                        <Receipt className="w-4 h-4 text-muted-foreground/40" />
-                                                        Spent ₹{myShare.amount.toLocaleString()}
-                                                    </div>
-                                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
-                                                        Settled
-                                                    </p>
-                                                </>
-                                            )
-                                        ) : (
-                                            // Payer has no share - lent full amount
-                                            <>
-                                                <div className="text-sm font-black flex items-center gap-1 justify-end text-emerald-500">
-                                                    <ArrowUpRight className="w-4 h-4" />
-                                                    Lent ₹{item.total_amount.toLocaleString()}
-                                                </div>
-                                                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
-                                                    {/* Check if all shares are paid */}
-                                                    {item.shares.every(s => s.paid) ? "Settled" : "Pending"}
-                                                </p>
-                                            </>
-                                        )
-                                    ) : myShare ? (
-                                        // User is not payer but has a share
-                                        <>
-                                            <div className="text-sm font-black flex items-center gap-1 justify-end text-rose-500">
-                                                <ArrowDownLeft className="w-4 h-4" />
-                                                Owe ₹{myShare.amount.toLocaleString()}
-                                            </div>
-                                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest mt-0.5">
-                                                {myShare.paid ? "Settled" : "Pending"}
-                                            </p>
-                                        </>
-                                    ) : null}
-                                </div>
-                                <div className="text-right min-w-[100px]">
-                                    <p className="text-xl font-black">
-                                        ₹{item.total_amount.toLocaleString()}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">
-                                        Total Bill
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+                {bills.map((item) => (
+                    <BillCard
+                        key={item.id}
+                        bill={item}
+                        currentUserId={currentUser?.id}
+                        showGroup
+                    />
+                ))}
 
                 {/* Scroll Sentinel */}
                 <div ref={loaderRef} className="h-4" />
@@ -197,7 +103,7 @@ export default function ActivityPage() {
                             </div>
                             <h3 className="text-2xl font-bold mb-2">No activity yet</h3>
                             <p className="text-muted-foreground max-w-xs mx-auto">
-                                Start adding expenses in your groups to see your financial journey unfold here.
+                                Start adding bills in your groups to see your financial journey unfold here.
                             </p>
                         </div>
                     ) : (

@@ -10,8 +10,8 @@ import { GroupsAPI, UsersAPI, type GroupMember, SummaryAPI, type Bill } from "@/
 // Extracted Components
 import { GroupHeader } from "@/components/groups/GroupHeader";
 import { MemberList } from "@/components/groups/MemberList";
-import { ExpenseList } from "@/components/groups/ExpenseList";
-import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
+import { BillList } from "@/components/bills/BillList";
+import { AddBillModal } from "@/components/bills/AddBillModal";
 import { InviteMemberModal } from "@/components/groups/InviteMemberModal";
 import { ConfirmationModal } from "@/components/ui/ConfirmationModal";
 
@@ -53,7 +53,7 @@ export default function GroupDetailPage() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isAddBillOpen, setIsAddBillOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
@@ -141,16 +141,16 @@ export default function GroupDetailPage() {
     }
   }, [id, fetchGroupDetail]);
 
-  const handleExpenseAdded = () => {
-    setIsAddExpenseOpen(false);
+  const handleBillAdded = () => {
+    setIsAddBillOpen(false);
     setBillToEdit(null);
     setRefreshTrigger((prev) => prev + 1);
     fetchGroupDetail();
   };
 
-  const handleEditExpense = (bill: Bill) => {
+  const handleEditBill = (bill: Bill) => {
     setBillToEdit(bill);
-    setIsAddExpenseOpen(true);
+    setIsAddBillOpen(true);
   };
 
   const removeMember = (memberId: string) => {
@@ -196,9 +196,9 @@ export default function GroupDetailPage() {
     <div className="space-y-8 pb-20">
       <GroupHeader
         group={group}
-        onAddExpense={() => {
+        onAddBill={() => {
           setBillToEdit(null);
-          setIsAddExpenseOpen(true);
+          setIsAddBillOpen(true);
         }}
         onInviteMember={() => setIsAddMemberOpen(true)}
       />
@@ -287,26 +287,26 @@ export default function GroupDetailPage() {
         </div>
 
         <div className="lg:col-span-8">
-          <ExpenseList
+          <BillList
             groupId={id}
             currentUserId={currentUser?.id}
-            onAddExpense={() => {
+            onAddBill={() => {
               setBillToEdit(null);
-              setIsAddExpenseOpen(true);
+              setIsAddBillOpen(true);
             }}
-            onEditExpense={handleEditExpense}
+            onEditBill={handleEditBill}
             refreshTrigger={refreshTrigger}
           />
         </div>
       </div>
 
-      <AddExpenseModal
-        isOpen={isAddExpenseOpen}
+      <AddBillModal
+        isOpen={isAddBillOpen}
         onClose={() => {
-          setIsAddExpenseOpen(false);
+          setIsAddBillOpen(false);
           setBillToEdit(null);
         }}
-        onSuccess={handleExpenseAdded}
+        onSuccess={handleBillAdded}
         currentUser={currentUser}
         initialGroupId={id}
         billToEdit={billToEdit}

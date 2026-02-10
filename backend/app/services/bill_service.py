@@ -186,15 +186,23 @@ class BillService:
         # Pydantic enum might be "EQUAL", DB enum might be "EQUAL"
         
         if st_str == st_equal or st_str == "EQUAL":
-            count = len(shares_input)
+            # Filter those who should actually be part of the split divisor.
+            # We treat amount=0 as "not involved in the equal split".
+            involved_shares = [
+                s for s in shares_input 
+                if getattr(s, "amount", None) is None or s.amount > 0
+            ]
+            count = len(involved_shares)
             if count == 0:
                 raise ValidationError("At least one person must be involved in the split")
 
             individual_amount = total_amount / count
+            
+            involved_ids = {str(s.user_id) for s in involved_shares}
             return [
                 {
                     "user_id": str(share.user_id),
-                    "amount": individual_amount,
+                    "amount": individual_amount if str(share.user_id) in involved_ids else 0,
                     "paid": str(share.user_id) == paid_by,
                 }
                 for share in shares_input
@@ -210,7 +218,7 @@ class BillService:
             return [
                 {
                     "user_id": str(share.user_id),
-                    "amount": share.amount,
+                    "amount": share.amount or 0,
                     "paid": str(share.user_id) == paid_by,
                 }
                 for share in shares_input

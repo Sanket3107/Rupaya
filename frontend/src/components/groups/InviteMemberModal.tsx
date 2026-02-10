@@ -62,7 +62,7 @@ export function InviteMemberModal({
       isOpen={isOpen}
       onClose={onClose}
       title="Invite Member"
-      description="Share the group and split expenses with someone new."
+      description="Share the group and split bills with someone new."
     >
       <div className="space-y-6">
         <div className="space-y-4">

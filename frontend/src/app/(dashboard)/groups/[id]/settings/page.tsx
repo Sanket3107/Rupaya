@@ -355,7 +355,7 @@ export default function GroupSettingsPage() {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={handleDeleteGroup}
                 title="Delete Group"
-                description={`Are you sure you want to delete "${group?.name}"? This action cannot be undone and all expenses associated with this group will be lost.`}
+                description={`Are you sure you want to delete "${group?.name}"? This action cannot be undone and all bills associated with this group will be lost.`}
                 confirmText="Delete Group"
                 variant="destructive"
                 isLoading={isDeletingGroup}

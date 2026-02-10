@@ -50,10 +50,10 @@ export default function LandingPage() {
               Splitting bills made simple
             </span>
             <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-6 bg-gradient-to-b from-foreground to-foreground/60 bg-clip-text text-transparent">
-              Manage expenses <br /> without the stress.
+              Manage bills <br /> without the stress.
             </h1>
             <p className="text-muted-foreground text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed">
-              Track, split, and settle group expenses effortlessly.
+              Track, split, and settle group bills effortlessly.
               Beautifully designed for modern teams and friends.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -79,7 +79,7 @@ export default function LandingPage() {
             className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-32"
           >
             {[
-              { icon: Zap, title: "Lightning Fast", desc: "Add expenses in seconds with our intuitive interface." },
+              { icon: Zap, title: "Lightning Fast", desc: "Add bills in seconds with our intuitive interface." },
               { icon: Shield, title: "Secure", desc: "Your financial data is encrypted and private." },
               { icon: Heart, title: "Fair Splitting", desc: "Multiple splitting methods for every situation." }
             ].map((feature, i) => (

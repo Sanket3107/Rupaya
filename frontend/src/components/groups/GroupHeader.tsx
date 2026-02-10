@@ -10,11 +10,11 @@ interface GroupHeaderProps {
         name: string;
         members: unknown[];
     };
-    onAddExpense: () => void;
+    onAddBill: () => void;
     onInviteMember: () => void;
 }
 
-export function GroupHeader({ group, onAddExpense, onInviteMember }: GroupHeaderProps) {
+export function GroupHeader({ group, onAddBill, onInviteMember }: GroupHeaderProps) {
     return (
         <div className="space-y-8">
             {/* Breadcrumbs / Back */}
@@ -42,9 +42,9 @@ export function GroupHeader({ group, onAddExpense, onInviteMember }: GroupHeader
                     <div className="flex gap-3">
                         <Button
                             className="rounded-2xl h-12 px-6 shadow-lg shadow-primary/20 gap-2 font-bold"
-                            onClick={onAddExpense}
+                            onClick={onAddBill}
                         >
-                            <Plus className="w-4 h-4" /> Add Expense
+                            <Plus className="w-4 h-4" /> Add Bill
                         </Button>
                         <Button
                             variant="secondary"

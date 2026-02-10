@@ -36,10 +36,10 @@ interface SummaryData {
 }
 
 interface SidebarProps {
-  onAddExpense?: () => void;
+  onAddBill?: () => void;
 }
 
-export function Sidebar({ onAddExpense }: SidebarProps) {
+export function Sidebar({ onAddBill }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = React.useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = React.useState(false);
 
@@ -213,10 +213,10 @@ export function Sidebar({ onAddExpense }: SidebarProps) {
               isCollapsed && "justify-center px-0"
             )}
             size="md"
-            onClick={onAddExpense}
+            onClick={onAddBill}
           >
             <PlusCircle className="w-5 h-5 shrink-0" />
-            {!isCollapsed && <span className="whitespace-nowrap">Add Expense</span>}
+            {!isCollapsed && <span className="whitespace-nowrap">Add Bill</span>}
           </Button>
           <button
             onClick={handleLogout}

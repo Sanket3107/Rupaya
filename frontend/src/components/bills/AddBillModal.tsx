@@ -13,7 +13,7 @@ interface GroupOption {
   name: string;
 }
 
-interface AddExpenseModalProps {
+interface AddBillModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
@@ -24,7 +24,7 @@ interface AddExpenseModalProps {
   billToEdit?: any; // Using any for now to avoid circular or missing type, but ideally Bill
 }
 
-export function AddExpenseModal({
+export function AddBillModal({
   isOpen,
   onClose,
   onSuccess,
@@ -33,7 +33,7 @@ export function AddExpenseModal({
   members: providedMembers,
   groups: providedGroups,
   billToEdit,
-}: AddExpenseModalProps) {
+}: AddBillModalProps) {
 
   const [billTitle, setBillTitle] = useState("");
   const [billAmount, setBillAmount] = useState("");
@@ -59,7 +59,12 @@ export function AddExpenseModal({
       setBillAmount(billToEdit.total_amount.toString());
       setPayerId(billToEdit.paid_by);
       setSelectedGroupId(billToEdit.group_id);
-      setSelectedMemberIds(billToEdit.shares.map((s: any) => s.user_id));
+      // Only "select" members who have a non-zero share
+      setSelectedMemberIds(
+        billToEdit.shares
+          .filter((s: any) => s.amount > 0)
+          .map((s: any) => s.user_id)
+      );
       setSplitType(billToEdit.split_type || "EQUAL");
 
       // Always populate exactAmounts from shares if available, so switching to EXACT works smoothly
@@ -173,9 +178,11 @@ export function AddExpenseModal({
           total_amount: parseFloat(billAmount),
           paid_by: payerId,
           split_type: splitType,
-          shares: selectedMemberIds.map((uid) => ({
-            user_id: uid,
-            amount: splitType === "EXACT" ? parseFloat(exactAmounts[uid] || "0") : undefined
+          shares: groupMembers.map((m) => ({
+            user_id: m.user.id,
+            amount: splitType === "EXACT"
+              ? parseFloat(exactAmounts[m.user.id] || "0")
+              : (selectedMemberIds.includes(m.user.id) ? undefined : 0)
           }))
         });
 
@@ -187,9 +194,11 @@ export function AddExpenseModal({
           total_amount: parseFloat(billAmount),
           paid_by: payerId,
           split_type: splitType,
-          shares: selectedMemberIds.map((uid) => ({
-            user_id: uid,
-            amount: splitType === "EXACT" ? parseFloat(exactAmounts[uid] || "0") : undefined
+          shares: groupMembers.map((m) => ({
+            user_id: m.user.id,
+            amount: splitType === "EXACT"
+              ? parseFloat(exactAmounts[m.user.id] || "0")
+              : (selectedMemberIds.includes(m.user.id) ? undefined : 0)
           }))
         });
       }
@@ -203,9 +212,9 @@ export function AddExpenseModal({
       if (onSuccess) onSuccess();
       // Ensure specific events for dashboard refresh are fired
       window.dispatchEvent(new Event("refresh-summary"));
-      window.dispatchEvent(new Event("refresh-expenses"));
+      window.dispatchEvent(new Event("refresh-bills"));
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to save expense");
+      alert(error instanceof Error ? error.message : "Failed to save bill");
     } finally {
       setIsSubmittingBill(false);
     }
@@ -221,7 +230,7 @@ export function AddExpenseModal({
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={billToEdit ? "Edit Expense" : "Add Expense"}
+      title={billToEdit ? "Edit Bill" : "Add Bill"}
       description={billToEdit ? "Update the details of this bill." : "Fill in the details to split a new bill."}
     >
       <form onSubmit={handleAddBill} className="space-y-6">
@@ -473,7 +482,7 @@ export function AddExpenseModal({
             className="flex-1 rounded-xl shadow-lg shadow-primary/20"
             disabled={isSubmittingBill}
           >
-            {isSubmittingBill ? "Saving..." : "Split Expense"}
+            {isSubmittingBill ? "Saving..." : "Split Bill"}
           </Button>
         </div>
       </form>

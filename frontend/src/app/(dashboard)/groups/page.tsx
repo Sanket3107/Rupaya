@@ -186,7 +186,7 @@ export default function GroupsPage() {
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Your Groups</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            Manage your shared expenses with friends and family.
+            Manage your shared bills with friends and family.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
@@ -360,7 +360,7 @@ export default function GroupsPage() {
             <div>
               <h4 className="text-xl font-bold">No groups joined</h4>
               <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-                Create your first group to start splitting expenses with
+                Create your first group to start splitting bills with
                 friends.
               </p>
             </div>

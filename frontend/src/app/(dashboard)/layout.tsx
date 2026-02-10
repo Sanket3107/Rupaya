@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/sidebar";
-import { AddExpenseModal } from "@/components/expenses/AddExpenseModal";
+import { AddBillModal } from "@/components/bills/AddBillModal";
 import { UsersAPI } from "@/lib/api/users";
 import { cn } from "@/lib/utils";
 
@@ -13,7 +13,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
+  const [isAddBillOpen, setIsAddBillOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ id: string } | null>(null);
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -43,14 +43,14 @@ export default function DashboardLayout({
   // Handle sidebar toggle and open expense modal via custom events
   React.useEffect(() => {
     const handleToggle = (e: Event) => setIsSidebarCollapsed((e as CustomEvent).detail);
-    const handleOpenExpense = () => setIsAddExpenseOpen(true);
+    const handleOpenBill = () => setIsAddBillOpen(true);
 
     window.addEventListener('sidebar-toggle', handleToggle);
-    window.addEventListener('open-add-expense', handleOpenExpense);
+    window.addEventListener('open-add-bill', handleOpenBill);
 
     return () => {
       window.removeEventListener('sidebar-toggle', handleToggle);
-      window.removeEventListener('open-add-expense', handleOpenExpense);
+      window.removeEventListener('open-add-bill', handleOpenBill);
     };
   }, []);
 
@@ -66,7 +66,7 @@ export default function DashboardLayout({
   return (
     <div className="flex min-h-screen bg-background text-foreground">
       {/* Sidebar */}
-      <Sidebar onAddExpense={() => setIsAddExpenseOpen(true)} />
+      <Sidebar onAddBill={() => setIsAddBillOpen(true)} />
 
       {/* Main Content */}
       <main className={cn(
@@ -76,12 +76,12 @@ export default function DashboardLayout({
         <div className="max-w-6xl mx-auto">{children}</div>
       </main>
 
-      <AddExpenseModal
-        isOpen={isAddExpenseOpen}
-        onClose={() => setIsAddExpenseOpen(false)}
+      <AddBillModal
+        isOpen={isAddBillOpen}
+        onClose={() => setIsAddBillOpen(false)}
         currentUser={currentUser}
         onSuccess={() => {
-          setIsAddExpenseOpen(false);
+          setIsAddBillOpen(false);
           // We might want a way to refresh the current page's data
           window.location.reload(); // Simple way for now, or use context/event bus
         }}

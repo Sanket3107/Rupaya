@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Rupaya | Split Expenses Stress-Free",
-  description: "Modern expense tracking and bill splitting application.",
+  title: "Rupaya | Split Bills Stress-Free",
+  description: "Modern bill tracking and splitting application.",
 };
 
 import { ToastProvider } from "@/components/ui/Toast";

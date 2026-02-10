@@ -16,6 +16,7 @@ import { BillsAPI, type Bill } from "@/lib/api";
 import { UsersAPI } from "@/lib/api/users";
 import { useRouter } from "next/navigation";
 import { AnimatePresence } from "framer-motion";
+import { BillCard } from "@/components/bills/BillCard";
 
 interface SummaryData {
   total_owed: number;
@@ -105,7 +106,7 @@ export default function DashboardPage() {
       bg: "bg-blue-500/10",
     },
     {
-      label: "Total Expenses",
+      label: "Total Bills",
       value: `${recentBills.length || 0} Recent`,
       icon: Receipt,
       color: "text-purple-500",
@@ -154,16 +155,16 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
             <p className="text-muted-foreground">
               Welcome back, {user?.name.split(" ")[0] || "User"}. Here&apos;s your
-              expense summary.
+              bill summary.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <Button
               className="rounded-xl shadow-lg shadow-primary/20"
-              onClick={() => window.dispatchEvent(new Event("open-add-expense"))}
+              onClick={() => window.dispatchEvent(new Event("open-add-bill"))}
             >
               <Plus className="mr-2 h-4 w-4" />
-              New Expense
+              New Bill
             </Button>
           </div>
 
@@ -214,71 +215,14 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 <>
-                  {recentBills.map((bill) => {
-                    const myShare = bill.shares.find((s) => s.user_id === user?.id);
-                    const isPayer = bill.paid_by === user?.id;
-
-                    // Calculate display amount and type
-                    let displayAmount = 0;
-                    let type: "lent" | "borrowed" = "borrowed";
-
-                    if (isPayer) {
-                      // If you're the payer
-                      if (myShare) {
-                        // You paid and have a share: lent = total - your share
-                        displayAmount = bill.total_amount - myShare.amount;
-                      } else {
-                        // You paid but have no share: lent = total amount
-                        displayAmount = bill.total_amount;
-                      }
-                      type = "lent";
-                    } else if (myShare) {
-                      // You didn't pay but have a share: borrowed = your share
-                      displayAmount = myShare.amount;
-                      type = "borrowed";
-                    }
-
-                    // Don't show bills where you have no relationship
-                    if (!isPayer && !myShare) return null;
-
-                    return (
-                      <div
-                        key={bill.id}
-                        className="flex items-center justify-between p-4 border-b border-border last:border-0 hover:bg-primary/[0.02] transition-colors cursor-pointer"
-                        onClick={() => (window.location.href = "/activity")}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-secondary rounded-full flex items-center justify-center">
-                            <Receipt className="w-5 h-5 text-muted-foreground" />
-                          </div>
-                          <div>
-                            <h4 className="font-semibold text-sm">
-                              {bill.description}
-                            </h4>
-                            <p className="text-xs text-muted-foreground">
-                              {bill.group?.name || "Unknown Group"} •{" "}
-                              {new Date(bill.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-sm">
-                            ₹{displayAmount.toLocaleString()}
-                          </p>
-                          <p
-                            className={cn(
-                              "text-[10px] font-medium",
-                              type === "lent"
-                                ? "text-emerald-500"
-                                : "text-rose-500"
-                            )}
-                          >
-                            {type === "lent" ? "You lent" : "You borrowed"}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
+                  {recentBills.map((bill) => (
+                    <BillCard
+                      key={bill.id}
+                      bill={bill}
+                      currentUserId={user?.id}
+                      showGroup
+                    />
+                  ))}
                   <div
                     onClick={() => (window.location.href = "/activity")}
                     className="block p-4 bg-secondary/10 hover:bg-secondary/20 text-center transition-colors group/more cursor-pointer"
