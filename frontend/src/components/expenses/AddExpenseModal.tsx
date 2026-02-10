@@ -61,10 +61,15 @@ export function AddExpenseModal({
       setSelectedGroupId(billToEdit.group_id);
       setSelectedMemberIds(billToEdit.shares.map((s: any) => s.user_id));
       setSplitType(billToEdit.split_type || "EQUAL");
-      if (billToEdit.split_type === "EXACT") {
+
+      // Always populate exactAmounts from shares if available, so switching to EXACT works smoothly
+      if (billToEdit.shares) {
         const amounts: Record<string, string> = {};
         billToEdit.shares.forEach((s: any) => {
-          amounts[s.user_id] = s.amount.toString();
+          // Use s.amount if available, otherwise just keep it empty/undefined
+          if (s.amount !== undefined && s.amount !== null) {
+            amounts[s.user_id] = s.amount.toString();
+          }
         });
         setExactAmounts(amounts);
       }
@@ -196,7 +201,9 @@ export function AddExpenseModal({
       setExactAmounts({});
 
       if (onSuccess) onSuccess();
+      // Ensure specific events for dashboard refresh are fired
       window.dispatchEvent(new Event("refresh-summary"));
+      window.dispatchEvent(new Event("refresh-expenses"));
     } catch (error) {
       alert(error instanceof Error ? error.message : "Failed to save expense");
     } finally {

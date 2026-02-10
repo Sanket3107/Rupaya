@@ -337,18 +337,21 @@ class GroupService:
         member_id: str,
         removed_by_id: str,
     ):
-        await self.check_is_admin(removed_by_id, group_id)
-
         stmt = select(GroupMember).where(GroupMember.id == member_id)
         res = await self.db.execute(stmt)
         member = res.scalar_one_or_none()
         
-        if member:
-            member.deleted_at = datetime.utcnow()
-            member.deleted_by = removed_by_id
-            await self.db.commit()
-            return member
-        return None 
+        if not member:
+            raise NotFoundError("Member not found")
+
+        # Allow if admin OR if removing self
+        if str(member.user_id) != str(removed_by_id):
+             await self.check_is_admin(removed_by_id, group_id)
+        
+        member.deleted_at = datetime.utcnow()
+        member.deleted_by = removed_by_id
+        await self.db.commit()
+        return member 
 
     async def delete_group(self, group_id: str, user_id: str):
         """

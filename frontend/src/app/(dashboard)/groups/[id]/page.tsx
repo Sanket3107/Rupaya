@@ -56,6 +56,8 @@ export default function GroupDetailPage() {
   const [isAddExpenseOpen, setIsAddExpenseOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLeaveModalOpen, setIsLeaveModalOpen] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [billToEdit, setBillToEdit] = useState<Bill | null>(null);
 
   const [memberToRemove, setMemberToRemove] = useState<string | null>(null);
@@ -70,17 +72,18 @@ export default function GroupDetailPage() {
     return membership?.role === "ADMIN";
   }, [group, currentUser]);
 
-  const handleDeleteGroup = async () => {
-    setIsDeleting(true);
+  const handleLeaveGroup = async () => {
+    if (!currentUser) return;
+    setIsLeaving(true);
     try {
-      await GroupsAPI.delete(id);
+      await GroupsAPI.removeMember(id, currentUser.id);
       router.push("/groups");
       window.dispatchEvent(new Event("refresh-summary"));
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to delete group");
+      alert(error instanceof Error ? error.message : "Failed to leave group");
     } finally {
-      setIsDeleting(false);
-      setIsDeleteModalOpen(false);
+      setIsLeaving(false);
+      setIsLeaveModalOpen(false);
     }
   };
 
@@ -270,22 +273,14 @@ export default function GroupDetailPage() {
 
 
 
+
               <Button
                 variant="ghost"
                 className="w-full justify-start text-sm h-10 rounded-xl text-rose-500 hover:bg-rose-500/5 hover:text-rose-600"
+                onClick={() => setIsLeaveModalOpen(true)}
               >
                 <Trash2 className="w-4 h-4 mr-3" /> Leave Group
               </Button>
-
-              {isAdmin && (
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-sm h-10 rounded-xl text-rose-500 hover:bg-rose-500/5 hover:text-rose-600"
-                  onClick={() => setIsDeleteModalOpen(true)}
-                >
-                  <Trash2 className="w-4 h-4 mr-3" /> Delete Group
-                </Button>
-              )}
 
             </div>
           </div>
@@ -346,14 +341,14 @@ export default function GroupDetailPage() {
       />
 
       <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={handleDeleteGroup}
-        title="Delete Group"
-        description={`Are you sure you want to delete "${group.name}"? This action cannot be undone and all expenses associated with this group will be lost.`}
-        confirmText="Delete Group"
+        isOpen={isLeaveModalOpen}
+        onClose={() => setIsLeaveModalOpen(false)}
+        onConfirm={handleLeaveGroup}
+        title="Leave Group"
+        description={`Are you sure you want to leave "${group.name}"?`}
+        confirmText="Leave Group"
         variant="destructive"
-        isLoading={isDeleting}
+        isLoading={isLeaving}
       />
 
     </div>

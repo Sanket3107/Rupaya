@@ -38,18 +38,19 @@ export function Modal({ isOpen, onClose, title, description, children }: ModalPr
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="relative w-full max-w-lg bg-card border border-border shadow-2xl rounded-2xl overflow-hidden"
+                        className="relative w-full max-w-lg bg-card border border-border shadow-2xl rounded-2xl overflow-hidden flex flex-col max-h-[85vh]"
                     >
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-2">
-                                <h2 className="text-xl font-bold tracking-tight">{title}</h2>
-                                <button
-                                    onClick={onClose}
-                                    className="rounded-full p-1 hover:bg-secondary transition-colors"
-                                >
-                                    <X className="w-5 h-5 text-muted-foreground" />
-                                </button>
-                            </div>
+                        <div className="p-6 border-b border-border flex items-center justify-between shrink-0">
+                            <h2 className="text-xl font-bold tracking-tight">{title}</h2>
+                            <button
+                                onClick={onClose}
+                                className="rounded-full p-1 hover:bg-secondary transition-colors"
+                            >
+                                <X className="w-5 h-5 text-muted-foreground" />
+                            </button>
+                        </div>
+                        
+                        <div className="p-6 overflow-y-auto">
                             {description && (
                                 <p className="text-sm text-muted-foreground mb-6">{description}</p>
                             )}
