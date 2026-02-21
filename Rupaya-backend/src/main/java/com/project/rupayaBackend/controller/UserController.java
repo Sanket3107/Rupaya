@@ -33,18 +33,7 @@ public class UserController {
     @GetMapping("/me")
     public ResponseEntity<UserResponse> getCurrentUser(
             @AuthenticationPrincipal UserDetails userDetails) {
-        if (userDetails == null) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
-        }
-        User user = userRepository.findByEmail(userDetails.getUsername())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        UserResponse response = UserResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .role(user.getRole())
-                .build();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(userService.getUserInfo(userDetails));
     }
 
     @PostMapping("/register")

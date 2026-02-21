@@ -30,10 +30,11 @@ public class GroupController {
     public ResponseEntity<PaginatedResponse<GroupResponse>> getGroups(
             @AuthenticationPrincipal CustomUserDetails principal,
             @RequestParam(defaultValue = "0") int skip,
-            @RequestParam(defaultValue = "20") int limit
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam (required = false) String search
     ) {
         return ResponseEntity.ok(
-                groupService.getAllGroupsOfUser(principal.getId(), skip, limit)
+                groupService.getAllGroupsOfUser(principal.getId(), skip, limit, search)
         );
     }
 

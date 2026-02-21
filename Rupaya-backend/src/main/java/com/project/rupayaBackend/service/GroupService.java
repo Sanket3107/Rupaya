@@ -107,14 +107,15 @@ public class GroupService {
     public PaginatedResponse<GroupResponse> getAllGroupsOfUser(
             UUID userId,
             int skip,
-            int limit
+            int limit,
+            String search
     ) {
 
         int page = skip / limit; // convert offset to page number
 
         Pageable pageable = PageRequest.of(page, limit);
 
-        Page<Group> groupPage = groupRepository.findAllGroupsOfUser(userId, pageable);
+        Page<Group> groupPage = groupRepository.findAllGroupsOfUser(userId, pageable,search);
 
         List<GroupResponse> items = groupPage.getContent().stream()
                 .map(g -> GroupResponse.builder()
