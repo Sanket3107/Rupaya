@@ -1,8 +1,6 @@
 package com.project.rupayaBackend.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.project.rupayaBackend.entity.User;
-import com.project.rupayaBackend.entity.enums.GroupRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,7 +13,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class GroupMembersResponse{
+public class GroupMembersResponse {
     private UUID id; // group_members.id
 
     private UserResponse user;

@@ -15,13 +15,13 @@ public class UserRepositoryTest {
     private UserRepository userRepository;
 
     @Test
-    public void getAllUsers(){
+    public void getAllUsers() {
         List<User> users = userRepository.findAll();
         System.out.println(users);
     }
 
     @Test
-    public void findByEmail(){
+    public void findByEmail() {
         Optional<User> user = userRepository.findByEmail("demo@example.com");
         user.stream().map(User::getName).forEach(System.out::println);
     }

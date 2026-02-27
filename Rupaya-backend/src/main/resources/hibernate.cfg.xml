@@ -6,7 +6,7 @@
 <hibernate-configuration>
     <session-factory>
         <!-- database configuration -->
-        <property name="hibernate.connection.url"> jdbc:postgresql://localhost:5432/rupaya</property>
+        <property name="hibernate.connection.url">jdbc:postgresql://localhost:5432/rupaya</property>
         <property name="hibernate.connection.username">postgres</property>
         <property name="hibernate.connection.password">postgres</property>
         <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>

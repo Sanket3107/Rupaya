@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { UsersAPI, GroupsAPI } from "@/lib/api";
 import { UserSearchInput } from "@/components/ui/UserSearchInput";
+import { useToast } from "@/components/ui/Toast";
 
 interface SearchUser {
   id: string;
@@ -25,7 +26,7 @@ export function InviteMemberModal({
   onSuccess,
 }: InviteMemberModalProps) {
   const [loading, setLoading] = useState(false);
-
+  const { toast } = useToast();
   const handleInviteUser = async (user: SearchUser) => {
     setLoading(true);
     try {
@@ -35,8 +36,12 @@ export function InviteMemberModal({
       });
       onClose();
       if (onSuccess) onSuccess();
+      toast("Member added to group", "success");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to add member");
+      toast(
+        error instanceof Error ? error.message : "Failed to add member",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -50,8 +55,12 @@ export function InviteMemberModal({
       });
       onClose();
       if (onSuccess) onSuccess();
+      toast("Member added to group", "success");
     } catch (error) {
-      alert(error instanceof Error ? error.message : "Failed to add member");
+      toast(
+        error instanceof Error ? error.message : "Failed to add member",
+        "error",
+      );
     } finally {
       setLoading(false);
     }
@@ -81,9 +90,9 @@ export function InviteMemberModal({
             How to invite
           </p>
           <p className="text-xs text-muted-foreground leading-relaxed">
-            Type your friend&apos;s name or email address. If they are already on
-            Rupaya, you can select them from the list. If not, you can still add
-            them by typing their full email and clicking invite.
+            Type your friend&apos;s name or email address. If they are already
+            on Rupaya, you can select them from the list. If not, you can still
+            add them by typing their full email and clicking invite.
           </p>
         </div>
       </div>

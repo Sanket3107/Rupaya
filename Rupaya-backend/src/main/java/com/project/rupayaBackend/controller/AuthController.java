@@ -30,12 +30,6 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
-//    @PostMapping("/register")
-//    public ResponseEntity<LoginResponse> register(@Valid @RequestBody RegisterRequest request) {
-//        LoginResponse response = authService.register(request);
-//        return ResponseEntity.ok(response);
-//    }
-
     @PostMapping("/refresh")
     public ResponseEntity<LoginResponse> refresh(@RequestBody RefreshTokenRequest request) {
         LoginResponse response = authService.refresh(request);

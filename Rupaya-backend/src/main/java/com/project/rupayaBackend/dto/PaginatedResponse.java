@@ -1,5 +1,6 @@
 package com.project.rupayaBackend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 import java.util.List;
@@ -14,6 +15,8 @@ public class PaginatedResponse<T> {
     private long total;
     private int skip;
     private int limit;
+
+    @JsonProperty("has_more")
     private boolean hasMore;
 }
 
