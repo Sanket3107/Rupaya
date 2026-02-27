@@ -22,7 +22,7 @@ import lombok.Setter;
 public abstract class AuditableSoftDeleteEntity {
 
     @CreatedDate
-    @Column(name = "created_at", updatable = false,  nullable = false)
+    @Column(name = "created_at", updatable = false, nullable = false)
     private Instant createdAt;
 
     @LastModifiedDate
@@ -42,7 +42,7 @@ public abstract class AuditableSoftDeleteEntity {
     @Column(name = "deleted_by")
     private UUID deletedBy;
 
-    public void deletedBy(UUID userId){
+    public void deletedBy(UUID userId) {
         this.deletedBy = userId;
         this.deletedAt = Instant.now();
     }

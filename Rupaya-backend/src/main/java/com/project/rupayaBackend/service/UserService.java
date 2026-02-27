@@ -18,30 +18,30 @@ import java.util.UUID;
 @Service
 @Transactional
 public class UserService {
-	@Autowired
-	private UserRepository userRepository;
+    @Autowired
+    private UserRepository userRepository;
 
-	public UserResponse getUserInfo(UserDetails userDetails){
-		if (userDetails == null) {
-			throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
-		}
-		User user = userRepository.findByEmail(userDetails.getUsername())
-				.orElseThrow(() -> new NotFoundException("User not found"));
-		UserResponse response = UserResponse.builder()
-				.id(user.getId())
-				.name(user.getName())
-				.email(user.getEmail())
-				.role(user.getRole())
-				.build();
-		return response;
-	}
+    public UserResponse getUserInfo(UserDetails userDetails) {
+        if (userDetails == null) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Not authenticated");
+        }
+        User user = userRepository.findByEmail(userDetails.getUsername())
+                .orElseThrow(() -> new NotFoundException("User not found"));
+        UserResponse response = UserResponse.builder()
+                .id(user.getId())
+                .name(user.getName())
+                .email(user.getEmail())
+                .role(user.getRole())
+                .build();
+        return response;
+    }
 
-	public List<UserResponse> searchUsers(String q, UUID currentUserId) {
-		if(q == null || q.trim().isEmpty()){
-			return List.of();
-		}
-		List<User> users = userRepository.searchByNameOrEmailExcludeSelf(q.trim(),currentUserId, PageRequest.of(0, 10));
-		List<UserResponse> userResponses = users.stream().map(user -> UserResponse.builder().id(user.getId()).name(user.getName()).email(user.getEmail()).role(user.getRole()).build()).toList();
-		return userResponses;
-	}
+    public List<UserResponse> searchUsers(String q, UUID currentUserId) {
+        if (q == null || q.trim().isEmpty()) {
+            return List.of();
+        }
+        List<User> users = userRepository.searchByNameOrEmailExcludeSelf(q.trim(), currentUserId, PageRequest.of(0, 10));
+        List<UserResponse> userResponses = users.stream().map(user -> UserResponse.builder().id(user.getId()).name(user.getName()).email(user.getEmail()).role(user.getRole()).build()).toList();
+        return userResponses;
+    }
 }

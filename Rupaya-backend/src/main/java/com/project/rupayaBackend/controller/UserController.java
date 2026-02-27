@@ -3,7 +3,6 @@ package com.project.rupayaBackend.controller;
 import com.project.rupayaBackend.dto.LoginResponse;
 import com.project.rupayaBackend.dto.RegisterRequest;
 import com.project.rupayaBackend.dto.UserResponse;
-import com.project.rupayaBackend.entity.User;
 import com.project.rupayaBackend.repository.UserRepository;
 import com.project.rupayaBackend.security.CustomUserDetails;
 import com.project.rupayaBackend.service.AuthService;
@@ -14,9 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.UUID;
@@ -37,7 +33,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<LoginResponse> registerUser(@Valid @RequestBody RegisterRequest request){
+    public ResponseEntity<LoginResponse> registerUser(@Valid @RequestBody RegisterRequest request) {
         LoginResponse response = authService.register(request);
         return ResponseEntity.ok(response);
     }

@@ -1,5 +1,6 @@
 package com.project.rupayaBackend.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,11 +19,21 @@ public class GroupDetailResponse {
     private UUID id;
     private String name;
     private String description;
-    private UUID created_by;
-    private Instant created_at;
-    private long member_count;
-    private double total_owed;
-    private double total_owe;
+
+    @JsonProperty("created_by")
+    private UUID createdBy;
+
+    @JsonProperty("created_at")
+    private Instant createdAt;
+
+    @JsonProperty("member_count")
+    private long memberCount;
+
+    @JsonProperty("total_owed")
+    private double totalOwed;
+
+    @JsonProperty("total_owe")
+    private double totalOwe;
     private List<GroupMembersResponse> members;
 
 }
